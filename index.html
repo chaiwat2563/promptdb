@@ -1,1 +1,154 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Prompt Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body class="bg-gray-50 min-h-screen p-4">
+  <div id="promptList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <div id="pagination" class="flex justify-center mt-6"></div>
+
+  <script>
+    // -----------------------------
+    // ฟังก์ชันช่วยป้องกัน XSS และจัดการ URL รูปภาพ
+    // -----------------------------
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/[&<>"']/g, m => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[m]));
+    }
+
+    function escapeForJs(str) {
+      if (!str) return '';
+      return str.replace(/['"\\\n\r\u2028\u2029]/g, c => {
+        switch (c) {
+          case "'": return "\\'";
+          case '"': return '\\"';
+          case '\\': return '\\\\';
+          case '\n': return '\\n';
+          case '\r': return '\\r';
+          case '\u2028': return '\\u2028';
+          case '\u2029': return '\\u2029';
+        }
+      });
+    }
+
+    function convertToViewableUrl(url) {
+      if (!url) return '';
+      if (url.includes('drive.google.com')) {
+        const match = url.match(/[-\w]{25,}/);
+        if (match) {
+          return `https://drive.google.com/uc?id=${match[0]}`;
+        }
+      }
+      return url;
+    }
+
+    // -----------------------------
+    // ฟังก์ชันหลักจัดการ Prompts
+    // -----------------------------
+    function loadPrompts() {
+      const data = localStorage.getItem('prompts');
+      return data ? JSON.parse(data) : [];
+    }
+
+    function savePrompts(prompts) {
+      localStorage.setItem('prompts', JSON.stringify(prompts));
+    }
+
+    function createPromptCard(prompt, index) {
+      const imageUrl = prompt.ImageUrl ? convertToViewableUrl(prompt.ImageUrl) : '';
+      const createDate = prompt.createDate ? new Date(prompt.createDate).toLocaleDateString() : '';
+
+      return `
+        <div class="bg-white p-4 rounded-2xl shadow-md hover:shadow-xl transition duration-300 flex flex-col h-full">
+          ${imageUrl
+            ? `<img src="${escapeHtml(imageUrl)}" alt="Prompt Image" class="rounded-lg w-full h-48 object-cover mb-3">`
+            : `<div class="w-full h-48 bg-gray-200 rounded-lg mb-3 flex items-center justify-center text-gray-500">ไม่มีรูป</div>`
+          }
+          <h2 class="text-lg font-bold text-gray-800 mb-2">${escapeHtml(prompt.name)}</h2>
+          <p class="text-gray-600 text-sm mb-2">ประเภท: ${escapeHtml(prompt.category)}</p>
+          <p class="text-gray-600 text-sm flex-grow">${escapeHtml(prompt.prompt)}</p>
+          <p class="text-gray-400 text-xs mt-2">เพิ่มเมื่อ: ${createDate}</p>
+          <div class="mt-4 flex justify-between">
+            <button onclick="editPrompt(${index})"
+              class="bg-yellow-400 text-white px-3 py-1 rounded-lg hover:bg-yellow-500 transition text-sm">แก้ไข</button>
+            <button onclick="deletePrompt(${index})"
+              class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition text-sm">ลบ</button>
+            <button onclick="copyPrompt('${escapeForJs(prompt.prompt)}')"
+              class="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition text-sm">คัดลอก</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPrompts(filteredPrompts, currentPage, promptsPerPage) {
+      const start = (currentPage - 1) * promptsPerPage;
+      const end = start + promptsPerPage;
+      const paginatedPrompts = filteredPrompts.slice(start, end);
+
+      document.getElementById('promptList').innerHTML =
+        paginatedPrompts.map((p, i) => createPromptCard(p, start + i)).join('');
+
+      const totalPages = Math.ceil(filteredPrompts.length / promptsPerPage);
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.innerText = i;
+        btn.className = `px-3 py-1 mx-1 rounded-lg ${i === currentPage ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'}`;
+        btn.onclick = () => renderPrompts(filteredPrompts, i, promptsPerPage);
+        pagination.appendChild(btn);
+      }
+
+      if (filteredPrompts.length === 0) {
+        document.getElementById('promptList').innerHTML = `
+          <div class="col-span-full text-center text-gray-500">ไม่พบข้อมูลที่ค้นหา</div>
+        `;
+      }
+    }
+
+    function copyPrompt(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'คัดลอกแล้ว',
+          text: 'Prompt ถูกคัดลอกไปยังคลิปบอร์ดแล้ว!',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      }).catch(() => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+
+        Swal.fire({
+          icon: 'success',
+          title: 'คัดลอกแล้ว',
+          text: 'Prompt ถูกคัดลอกไปยังคลิปบอร์ดแล้ว!',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      });
+    }
+
+    // -----------------------------
+    // Initial Render
+    // -----------------------------
+    const prompts = loadPrompts();
+    renderPrompts(prompts, 1, 6);
+  </script>
+</body>
+</html>
 
