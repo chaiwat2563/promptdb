@@ -7,12 +7,22 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-gray-50 min-h-screen p-4">
+  <div class="flex items-center gap-2 mb-4">
+    <input id="searchInput" type="text" placeholder="ค้นหา Prompt..." 
+      class="border p-2 rounded-lg flex-grow" oninput="handleSearch()" />
+    <button onclick="resetFilter()" 
+      class="bg-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-400">ล้างการค้นหา</button>
+  </div>
+
   <div id="promptList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
   <div id="pagination" class="flex justify-center mt-6"></div>
 
+  <!-- hidden file input สำหรับอัพเดตรูป -->
+  <input type="file" id="fileInput" accept="image/*" class="hidden" />
+
   <script>
     // -----------------------------
-    // ฟังก์ชันช่วยป้องกัน XSS และจัดการ URL รูปภาพ
+    // ฟังก์ชันช่วย
     // -----------------------------
     function escapeHtml(str) {
       if (!str) return '';
@@ -51,9 +61,6 @@
       return url;
     }
 
-    // -----------------------------
-    // ฟังก์ชันหลักจัดการ Prompts
-    // -----------------------------
     function loadPrompts() {
       const data = localStorage.getItem('prompts');
       return data ? JSON.parse(data) : [];
@@ -63,6 +70,9 @@
       localStorage.setItem('prompts', JSON.stringify(prompts));
     }
 
+    // -----------------------------
+    // Render Card
+    // -----------------------------
     function createPromptCard(prompt, index) {
       const imageUrl = prompt.ImageUrl ? convertToViewableUrl(prompt.ImageUrl) : '';
       const createDate = prompt.createDate ? new Date(prompt.createDate).toLocaleDateString() : '';
@@ -77,16 +87,60 @@
           <p class="text-gray-600 text-sm mb-2">ประเภท: ${escapeHtml(prompt.category)}</p>
           <p class="text-gray-600 text-sm flex-grow">${escapeHtml(prompt.prompt)}</p>
           <p class="text-gray-400 text-xs mt-2">เพิ่มเมื่อ: ${createDate}</p>
-          <div class="mt-4 flex justify-between">
+          <div class="mt-4 flex flex-wrap gap-2">
             <button onclick="editPrompt(${index})"
               class="bg-yellow-400 text-white px-3 py-1 rounded-lg hover:bg-yellow-500 transition text-sm">แก้ไข</button>
             <button onclick="deletePrompt(${index})"
               class="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600 transition text-sm">ลบ</button>
             <button onclick="copyPrompt('${escapeForJs(prompt.prompt)}')"
               class="bg-green-500 text-white px-3 py-1 rounded-lg hover:bg-green-600 transition text-sm">คัดลอก</button>
+            ${imageUrl ? `<a href="${escapeHtml(imageUrl)}" target="_blank" 
+              class="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600 transition text-sm">เปิดรูป</a>` : ''}
           </div>
         </div>
       `;
+    }
+
+    // -----------------------------
+    // Pagination
+    // -----------------------------
+    function renderPagination(totalPages, currentPage, onPageChange) {
+      const pagination = document.getElementById('pagination');
+      pagination.innerHTML = '';
+
+      function createBtn(label, page, isActive = false, isDisabled = false) {
+        const btn = document.createElement('button');
+        btn.innerText = label;
+        btn.className = `px-3 py-1 mx-1 rounded-lg ${isActive
+          ? 'bg-blue-500 text-white'
+          : isDisabled
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-gray-200 hover:bg-gray-300'}`;
+        if (!isDisabled) btn.onclick = () => onPageChange(page);
+        pagination.appendChild(btn);
+      }
+
+      // ปุ่มก่อนหน้า
+      createBtn("ก่อนหน้า", currentPage - 1, false, currentPage === 1);
+
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) {
+          createBtn(i, i, i === currentPage);
+        }
+      } else {
+        createBtn(1, 1, currentPage === 1);
+        if (currentPage > 3) pagination.appendChild(document.createTextNode("..."));
+        const start = Math.max(2, currentPage - 1);
+        const end = Math.min(totalPages - 1, currentPage + 1);
+        for (let i = start; i <= end; i++) {
+          createBtn(i, i, i === currentPage);
+        }
+        if (currentPage < totalPages - 2) pagination.appendChild(document.createTextNode("..."));
+        createBtn(totalPages, totalPages, currentPage === totalPages);
+      }
+
+      // ปุ่มถัดไป
+      createBtn("ถัดไป", currentPage + 1, false, currentPage === totalPages);
     }
 
     function renderPrompts(filteredPrompts, currentPage, promptsPerPage) {
@@ -98,16 +152,7 @@
         paginatedPrompts.map((p, i) => createPromptCard(p, start + i)).join('');
 
       const totalPages = Math.ceil(filteredPrompts.length / promptsPerPage);
-      const pagination = document.getElementById('pagination');
-      pagination.innerHTML = '';
-
-      for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement('button');
-        btn.innerText = i;
-        btn.className = `px-3 py-1 mx-1 rounded-lg ${i === currentPage ? 'bg-blue-500 text-white' : 'bg-gray-200 hover:bg-gray-300'}`;
-        btn.onclick = () => renderPrompts(filteredPrompts, i, promptsPerPage);
-        pagination.appendChild(btn);
-      }
+      renderPagination(totalPages, currentPage, (page) => renderPrompts(filteredPrompts, page, promptsPerPage));
 
       if (filteredPrompts.length === 0) {
         document.getElementById('promptList').innerHTML = `
@@ -116,23 +161,62 @@
       }
     }
 
+    // -----------------------------
+    // Upload Image (แทนที่รูปเดิม)
+    // -----------------------------
+    async function uploadImage(file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("YOUR_GOOGLE_SCRIPT_URL", { // ใส่ URL ของ Google Apps Script
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      return data.url; // สมมติว่า Apps Script ส่งกลับ { url: "..." }
+    }
+
+    async function editPrompt(index) {
+      const prompts = loadPrompts();
+      const prompt = prompts[index];
+
+      const { value: formValues } = await Swal.fire({
+        title: "แก้ไข Prompt",
+        html: `
+          <input id="swal-name" class="swal2-input" value="${escapeHtml(prompt.name)}" placeholder="ชื่อ">
+          <input id="swal-category" class="swal2-input" value="${escapeHtml(prompt.category)}" placeholder="ประเภท">
+          <textarea id="swal-prompt" class="swal2-textarea" placeholder="Prompt">${escapeHtml(prompt.prompt)}</textarea>
+          <input type="file" id="swal-file" accept="image/*" class="swal2-file">
+        `,
+        focusConfirm: false,
+        preConfirm: () => {
+          return {
+            name: document.getElementById("swal-name").value,
+            category: document.getElementById("swal-category").value,
+            prompt: document.getElementById("swal-prompt").value,
+            file: document.getElementById("swal-file").files[0] || null
+          };
+        }
+      });
+
+      if (formValues) {
+        if (formValues.file) {
+          const newUrl = await uploadImage(formValues.file);
+          prompt.ImageUrl = newUrl;
+        }
+        prompt.name = formValues.name;
+        prompt.category = formValues.category;
+        prompt.prompt = formValues.prompt;
+        savePrompts(prompts);
+        renderPrompts(prompts, 1, 6);
+        Swal.fire("สำเร็จ", "บันทึกการแก้ไขเรียบร้อย", "success");
+      }
+    }
+
+    // -----------------------------
+    // Copy
+    // -----------------------------
     function copyPrompt(text) {
       navigator.clipboard.writeText(text).then(() => {
-        Swal.fire({
-          icon: 'success',
-          title: 'คัดลอกแล้ว',
-          text: 'Prompt ถูกคัดลอกไปยังคลิปบอร์ดแล้ว!',
-          timer: 1500,
-          showConfirmButton: false
-        });
-      }).catch(() => {
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-
         Swal.fire({
           icon: 'success',
           title: 'คัดลอกแล้ว',
@@ -144,6 +228,25 @@
     }
 
     // -----------------------------
+    // Search & Reset
+    // -----------------------------
+    function handleSearch() {
+      const keyword = document.getElementById('searchInput').value.toLowerCase();
+      const allPrompts = loadPrompts();
+      const filtered = allPrompts.filter(p =>
+        p.name.toLowerCase().includes(keyword) ||
+        p.category.toLowerCase().includes(keyword) ||
+        p.prompt.toLowerCase().includes(keyword)
+      );
+      renderPrompts(filtered, 1, 6);
+    }
+
+    function resetFilter() {
+      document.getElementById('searchInput').value = '';
+      renderPrompts(loadPrompts(), 1, 6);
+    }
+
+    // -----------------------------
     // Initial Render
     // -----------------------------
     const prompts = loadPrompts();
@@ -151,4 +254,3 @@
   </script>
 </body>
 </html>
-
