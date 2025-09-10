@@ -182,15 +182,9 @@
 
                 <div class="mb-6">
                     <label class="block text-gray-700 font-medium mb-2">รูปภาพ</label>
-                    <input type="file" id="promptImage" accept="image/*" onchange="previewNewImage()" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                    <input type="file" id="promptImage" accept="image/*" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
                     <div id="currentImage" class="mt-2" style="display: none;">
-                        <p class="text-sm text-gray-600 mb-2">รูปภาพปัจจุบัน:</p>
                         <img id="currentImagePreview" src="" alt="Current image" class="w-32 h-32 object-cover rounded-lg">
-                    </div>
-                    <div id="newImagePreview" class="mt-2" style="display: none;">
-                        <p class="text-sm text-green-600 mb-2">รูปภาพใหม่ที่จะแทนที่:</p>
-                        <img id="newImagePreviewImg" src="" alt="New image preview" class="w-32 h-32 object-cover rounded-lg border-2 border-green-300">
-                        <p class="text-xs text-orange-600 mt-1">⚠️ รูปเดิมจะถูกลบและแทนที่ด้วยรูปใหม่</p>
                     </div>
                 </div>
 
@@ -488,27 +482,6 @@
         // Close modal
         function closeModal() {
             document.getElementById('promptModal').style.display = 'none';
-            // Reset image previews
-            document.getElementById('newImagePreview').style.display = 'none';
-            document.getElementById('currentImage').style.display = 'none';
-        }
-
-        // Preview new image when selected
-        function previewNewImage() {
-            const fileInput = document.getElementById('promptImage');
-            const newImagePreview = document.getElementById('newImagePreview');
-            const newImagePreviewImg = document.getElementById('newImagePreviewImg');
-            
-            if (fileInput.files && fileInput.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    newImagePreviewImg.src = e.target.result;
-                    newImagePreview.style.display = 'block';
-                };
-                reader.readAsDataURL(fileInput.files[0]);
-            } else {
-                newImagePreview.style.display = 'none';
-            }
         }
 
         // Save prompt
@@ -527,21 +500,11 @@
             const imageFile = document.getElementById('promptImage').files[0];
             if (imageFile) {
                 formData.append('image', imageFile);
-                formData.append('replaceImage', 'true'); // Flag to indicate image replacement
-            }
-
-            // If editing and there's an existing image, send the old image URL for deletion
-            if (editId && imageFile) {
-                const existingPrompt = allPrompts.find(p => p.id == editId);
-                if (existingPrompt && existingPrompt.ImageUrl) {
-                    formData.append('oldImageUrl', existingPrompt.ImageUrl);
-                }
             }
 
             try {
                 Swal.fire({
                     title: 'กำลังบันทึก...',
-                    text: imageFile && editId ? 'กำลังอัพโหลดรูปใหม่และลบรูปเดิม...' : 'กำลังบันทึกข้อมูล...',
                     allowOutsideClick: false,
                     didOpen: () => Swal.showLoading()
                 });
@@ -554,12 +517,7 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    let successMessage = editId ? 'แก้ไขข้อมูลเรียบร้อย' : 'เพิ่มข้อมูลเรียบร้อย';
-                    if (imageFile && editId) {
-                        successMessage += ' และอัพเดตรูปภาพแล้ว';
-                    }
-                    
-                    Swal.fire('สำเร็จ!', successMessage, 'success');
+                    Swal.fire('สำเร็จ!', editId ? 'แก้ไขข้อมูลเรียบร้อย' : 'เพิ่มข้อมูลเรียบร้อย', 'success');
                     closeModal();
                     loadPrompts();
                 } else {
@@ -567,11 +525,7 @@
                 }
             } catch (error) {
                 console.error('Error saving prompt:', error);
-                let errorMessage = 'ไม่สามารถบันทึกข้อมูลได้';
-                if (imageFile && editId) {
-                    errorMessage = 'ไม่สามารถอัพเดตรูปภาพได้';
-                }
-                Swal.fire('เกิดข้อผิดพลาด', errorMessage, 'error');
+                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
             }
         }
 
@@ -994,5 +948,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97d00a3ee2dda082',t:'MTc1NzUxODk5Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97cffe81a70afdc2',t:'MTc1NzUxODUxNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
