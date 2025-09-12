@@ -62,6 +62,8 @@
             font-weight: 400;
         }
 
+
+
         .controls {
             background: rgba(255, 255, 255, 0.95);
             padding: 25px;
@@ -154,6 +156,15 @@
 
         .btn-success:hover {
             background: #2f855a;
+        }
+
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #dd6b20;
         }
 
         .cards-grid {
@@ -418,6 +429,8 @@
             color: #cbd5e0;
         }
 
+
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -498,6 +511,8 @@
             </h1>
             <div class="subtitle">จัดทำโดย ชัยวัฒน์ พรหมมา</div>
         </div>
+
+
 
         <!-- Controls -->
         <div class="controls">
@@ -616,7 +631,7 @@
     </div>
 
     <script>
-        // Configuration
+        // Configuration - Replace with your actual Google Apps Script URL
         const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzrMYdaJiOxejvWZIVyjbsDey4TSVGEkO8aeOkcNk8kQ7qydASb2aUK0UmfpIkQnrvL/exec';
         const SHEET_ID = '1M2G1oIv_eiVa3QKdpLeqTTl64CjAyuGsQLKucNpas0o';
         const FOLDER_ID = '1p3Iu1x8H-QGmHO0tNIUiVY2uDHHgvuB_';
@@ -631,8 +646,8 @@
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
-            loadPrompts();
             setupEventListeners();
+            loadPrompts();
         });
 
         function setupEventListeners() {
@@ -655,6 +670,8 @@
                 }
             });
         }
+
+
 
         async function loadPrompts() {
             showLoading(true);
@@ -869,21 +886,93 @@
         }
 
         function copyPrompt(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'คัดลอกสำเร็จ!',
-                    text: 'Prompt ถูกคัดลอกไปยังคลิปบอร์ดแล้ว',
-                    timer: 2000,
-                    showConfirmButton: false
+            // Decode HTML entities first
+            const decodedText = text.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+            
+            // Try modern clipboard API first
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(decodedText).then(() => {
+                    showCopyNotification('คัดลอกสำเร็จ!', 'success');
+                }).catch(() => {
+                    fallbackCopyTextToClipboard(decodedText);
                 });
-            }).catch(() => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เกิดข้อผิดพลาด',
-                    text: 'ไม่สามารถคัดลอกได้'
-                });
+            } else {
+                fallbackCopyTextToClipboard(decodedText);
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopyNotification('คัดลอกสำเร็จ!', 'success');
+                } else {
+                    showManualCopyDialog(text);
+                }
+            } catch (err) {
+                showManualCopyDialog(text);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+
+        function showManualCopyDialog(text) {
+            Swal.fire({
+                title: 'คัดลอกด้วยตนเอง',
+                html: `<textarea readonly style="width: 100%; height: 200px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">${text}</textarea>`,
+                text: 'กรุณาเลือกข้อความและกด Ctrl+C (หรือ Cmd+C บน Mac)',
+                icon: 'info',
+                confirmButtonText: 'เข้าใจแล้ว'
             });
+        }
+
+        function showCopyNotification(message, type) {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? '#48bb78' : '#f56565'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                font-family: 'Kanit', sans-serif;
+                font-weight: 500;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+            `;
+            toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : 'times'}"></i> ${message}`;
+            
+            document.body.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
         }
 
         function showImageModal(imageUrl) {
@@ -906,16 +995,35 @@
             const actualIndex = (currentPage - 1) * pageSize + index;
             const prompt = filteredPrompts[actualIndex];
             
+            // Find the correct index in allPrompts array using multiple criteria
             editingIndex = allPrompts.findIndex(p => 
                 p.ชื่อ === prompt.ชื่อ && 
                 p.ประเภท === prompt.ประเภท && 
-                p.prompt === prompt.prompt
+                p.prompt === prompt.prompt &&
+                p.creatDate === prompt.creatDate
             );
+            
+            // If not found by all criteria, try with just name and prompt
+            if (editingIndex === -1) {
+                editingIndex = allPrompts.findIndex(p => 
+                    p.ชื่อ === prompt.ชื่อ && 
+                    p.prompt === prompt.prompt
+                );
+            }
+            
+            // If still not found, use the actual index as fallback
+            if (editingIndex === -1) {
+                editingIndex = actualIndex < allPrompts.length ? actualIndex : 0;
+            }
             
             document.getElementById('modalTitle').textContent = 'แก้ไข Prompt';
             document.getElementById('promptName').value = prompt.ชื่อ || '';
             document.getElementById('promptType').value = prompt.ประเภท || '';
             document.getElementById('promptText').value = prompt.prompt || '';
+            
+            // Clear file input
+            document.getElementById('imageFile').value = '';
+            
             document.getElementById('promptModal').style.display = 'block';
         }
 
@@ -1046,6 +1154,18 @@
 
                 if (editingIndex >= 0) {
                     promptData.index = editingIndex + 2; // +2 for header row and 0-based index
+                    
+                    // Preserve existing image if no new image uploaded
+                    if (!imageUrl && allPrompts[editingIndex] && allPrompts[editingIndex].ImageUrl) {
+                        promptData.data.ImageUrl = allPrompts[editingIndex].ImageUrl;
+                    }
+                    
+                    // Preserve creation date
+                    if (allPrompts[editingIndex] && allPrompts[editingIndex].creatDate) {
+                        promptData.data.creatDate = allPrompts[editingIndex].creatDate;
+                    } else {
+                        promptData.data.creatDate = new Date().toISOString();
+                    }
                 }
 
                 const response = await fetch(API_ENDPOINT, {
@@ -1085,5 +1205,5 @@
             document.getElementById('cardsGrid').style.display = show ? 'none' : 'grid';
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e1202405dc40dc',t:'MTc1NzY5ODE1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e1477fe4348210',t:'MTc1NzY5OTc2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
