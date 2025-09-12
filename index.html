@@ -3,198 +3,601 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prompt Database App</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Prompt Database v.2</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
         }
-        .prompt-title {
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
             font-family: 'Prompt', sans-serif;
+            font-size: 2.5rem;
             font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
         }
-        .prompt-name {
+
+        .header .subtitle {
+            font-size: 1.1rem;
+            color: #718096;
+            font-weight: 400;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .controls-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .search-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            flex: 1;
+        }
+
+        .search-input {
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Kanit', sans-serif;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Kanit', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f7fafc;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c53030;
+        }
+
+        .btn-success {
+            background: #38a169;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #2f855a;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
             font-family: 'Prompt', sans-serif;
+            font-size: 1.3rem;
             font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
         }
+
+        .card-type {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .card-image:hover {
+            transform: scale(1.02);
+        }
+
+        .card-prompt {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            border-left: 4px solid #667eea;
+        }
+
+        .card-prompt::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .card-prompt::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .card-prompt::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .card-date {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-bottom: 15px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            font-weight: 500;
+            color: #4a5568;
+            margin: 0 15px;
+        }
+
+        .page-size-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 20px;
+        }
+
+        .page-size-selector select {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Kanit', sans-serif;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 2% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .modal-title {
+            font-family: 'Prompt', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .close {
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #a0aec0;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #e53e3e;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: 'Kanit', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
         .loading {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            display: none;
+            text-align: center;
+            padding: 50px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading i {
+            font-size: 3rem;
+            color: #667eea;
             animation: spin 1s linear infinite;
         }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        .prompt-card { 
-            min-height: 350px; 
-            display: flex;
-            flex-direction: column;
+
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            color: #718096;
         }
-        .prompt-text {
-            max-height: 140px;
-            overflow-y: auto;
-            flex-grow: 1;
-            word-wrap: break-word;
-            word-break: break-word;
-            hyphens: auto;
-            line-height: 1.5;
-            white-space: pre-wrap;
+
+        .no-data i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #cbd5e0;
         }
-        .prompt-text::-webkit-scrollbar {
-            width: 4px;
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .controls-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-group {
+                flex-direction: column;
+            }
+
+            .search-input {
+                min-width: auto;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .card-actions {
+                justify-content: center;
+            }
+
+            .pagination {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+                padding: 20px;
+            }
         }
-        .prompt-text::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 2px;
-        }
-        .prompt-text::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 2px;
-        }
-        .prompt-text::-webkit-scrollbar-thumb:hover {
-            background: #a1a1a1;
-        }
-        .card-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        .card-footer {
-            margin-top: auto;
-            padding-top: 1rem;
-        }
-        .text-truncate {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .expand-text {
-            cursor: pointer;
-            color: #4f46e5;
-            font-size: 0.75rem;
-            margin-top: 0.25rem;
-        }
-        .expand-text:hover {
-            text-decoration: underline;
-        }
-        .modal {
-            backdrop-filter: blur(5px);
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .controls {
+                padding: 20px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <!-- Header -->
-    <header class="bg-white shadow-lg border-b-4 border-indigo-500">
-        <div class="container mx-auto px-4 py-6">
-            <div class="flex items-center justify-center">
-                <i class="fas fa-robot text-4xl text-indigo-600 mr-4"></i>
-                <div class="text-center">
-                    <h1 class="prompt-title text-4xl text-gray-800">Prompt Database</h1>
-                    <p class="text-sm text-gray-600 mt-1">จัดทำโดย ชัยวัฒน์ พรหมมา</p>
-                </div>
-            </div>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i class="fas fa-robot"></i>
+                Prompt Database v.2
+            </h1>
+            <div class="subtitle">จัดทำโดย ชัยวัฒน์ พรหมมา</div>
         </div>
-    </header>
 
-    <!-- Controls -->
-    <div class="container mx-auto px-4 py-6">
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <!-- Add Button -->
-                <button onclick="openAddModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors">
+        <!-- Controls -->
+        <div class="controls">
+            <div class="controls-row">
+                <div class="search-group">
+                    <input type="text" id="searchText" class="search-input" placeholder="ค้นหา prompt...">
+                    <select id="searchType" class="search-input">
+                        <option value="">ทุกประเภท</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="openAddModal()">
                     <i class="fas fa-plus"></i>
                     เพิ่ม Prompt
                 </button>
-
-                <!-- Search and Filters -->
-                <div class="flex flex-wrap items-center gap-4">
-                    <!-- Category Filter -->
-                    <select id="categoryFilter" onchange="filterPrompts()" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
-                        <option value="">ทุกประเภท</option>
-                    </select>
-
-                    <!-- Search -->
-                    <div class="relative">
-                        <input type="text" id="searchInput" placeholder="ค้นหา..." onkeyup="filterPrompts()" class="border border-gray-300 rounded-lg px-4 py-2 pl-10 focus:ring-2 focus:ring-indigo-500">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                    </div>
-
-
-
-                    <!-- Items per page -->
-                    <select id="itemsPerPage" onchange="changeItemsPerPage()" class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
-                        <option value="6">6 รายการ</option>
-                        <option value="12">12 รายการ</option>
-                        <option value="24">24 รายการ</option>
-                        <option value="all">ทั้งหมด</option>
-                    </select>
-                </div>
             </div>
         </div>
 
         <!-- Loading -->
-        <div id="loading" class="flex justify-center items-center py-12">
-            <div class="loading"></div>
-            <span class="ml-3 text-gray-600">กำลังโหลดข้อมูล...</span>
+        <div id="loading" class="loading">
+            <i class="fas fa-spinner"></i>
+            <p>กำลังโหลดข้อมูล...</p>
         </div>
 
-        <!-- Prompts Grid -->
-        <div id="promptsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6" style="display: none;"></div>
+        <!-- Cards Grid -->
+        <div id="cardsGrid" class="cards-grid"></div>
+
+        <!-- No Data -->
+        <div id="noData" class="no-data" style="display: none;">
+            <i class="fas fa-search"></i>
+            <h3>ไม่พบข้อมูล</h3>
+            <p>ลองเปลี่ยนคำค้นหาหรือเพิ่ม prompt ใหม่</p>
+        </div>
 
         <!-- Pagination -->
-        <div id="pagination" class="flex justify-center items-center gap-2 mt-6" style="display: none;"></div>
+        <div id="pagination" class="pagination">
+            <button class="btn btn-secondary" onclick="goToPage(1)">
+                <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button class="btn btn-secondary" onclick="goToPage(currentPage - 1)">
+                <i class="fas fa-angle-left"></i>
+            </button>
+            <div id="pageNumbers"></div>
+            <button class="btn btn-secondary" onclick="goToPage(currentPage + 1)">
+                <i class="fas fa-angle-right"></i>
+            </button>
+            <button class="btn btn-secondary" onclick="goToPage(totalPages)">
+                <i class="fas fa-angle-double-right"></i>
+            </button>
+            <div class="pagination-info">
+                <span id="paginationInfo"></span>
+            </div>
+            <div class="page-size-selector">
+                <label>แสดง:</label>
+                <select id="pageSize" onchange="changePageSize()">
+                    <option value="6">6</option>
+                    <option value="12" selected>12</option>
+                    <option value="24">24</option>
+                    <option value="48">48</option>
+                </select>
+                <label>รายการ</label>
+            </div>
+        </div>
     </div>
 
     <!-- Add/Edit Modal -->
-    <div id="promptModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
-        <div class="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="modalTitle" class="prompt-title text-2xl text-gray-800">เพิ่ม Prompt ใหม่</h2>
-                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
+    <div id="promptModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">เพิ่ม Prompt ใหม่</h2>
+                <span class="close" onclick="closeModal()">&times;</span>
             </div>
-
-            <form id="promptForm" onsubmit="savePrompt(event)">
-                <input type="hidden" id="editId" value="">
-                
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">ชื่อ Prompt</label>
-                    <input type="text" id="promptName" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+            <form id="promptForm">
+                <div class="form-group">
+                    <label class="form-label">ชื่อ Prompt</label>
+                    <input type="text" id="promptName" class="form-input" required>
                 </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">ประเภท</label>
-                    <input type="text" id="promptCategory" required class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
+                <div class="form-group">
+                    <label class="form-label">ประเภท</label>
+                    <input type="text" id="promptType" class="form-input" required>
                 </div>
-
-                <div class="mb-4">
-                    <label class="block text-gray-700 font-medium mb-2">Prompt</label>
-                    <textarea id="promptText" required rows="6" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500"></textarea>
+                <div class="form-group">
+                    <label class="form-label">Prompt</label>
+                    <textarea id="promptText" class="form-input form-textarea" required></textarea>
                 </div>
-
-                <div class="mb-6">
-                    <label class="block text-gray-700 font-medium mb-2">รูปภาพ</label>
-                    <input type="file" id="promptImage" accept="image/*" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500">
-                    <div id="currentImage" class="mt-2" style="display: none;">
-                        <img id="currentImagePreview" src="" alt="Current image" class="w-32 h-32 object-cover rounded-lg">
+                <div class="form-group">
+                    <label class="form-label">อัปโหลดรูปภาพ</label>
+                    <input type="file" id="imageFile" class="form-input" accept="image/*">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="useLh3" checked>
+                        <label for="useLh3">ใช้รูปแบบ lh3 (แนะนำ)</label>
                     </div>
                 </div>
-
-                <div class="flex justify-end gap-3">
-                    <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        ยกเลิก
-                    </button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-save mr-2"></i>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
                         บันทึก
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                        <i class="fas fa-times"></i>
+                        ยกเลิก
                     </button>
                 </div>
             </form>
@@ -202,751 +605,485 @@
     </div>
 
     <!-- Image Modal -->
-    <div id="imageModal" class="modal fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" style="display: none;" onclick="closeImageModal()">
-        <div class="max-w-4xl max-h-[90vh] p-4">
-            <img id="modalImage" src="" alt="Full size image" class="max-w-full max-h-full object-contain rounded-lg">
+    <div id="imageModal" class="modal">
+        <div class="modal-content" style="max-width: 90%; text-align: center;">
+            <div class="modal-header">
+                <h2 class="modal-title">ดูรูปภาพ</h2>
+                <span class="close" onclick="closeImageModal()">&times;</span>
+            </div>
+            <img id="modalImage" style="max-width: 100%; height: auto; border-radius: 10px;">
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxaDB6dhuljJxfgTsW2mHtS-vyF9Q9o4SEs0RoCSt5vVQp9YuYyWrZ3s52vAx7QCgWZ/exec';
-        
+        // Configuration
+        const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzrMYdaJiOxejvWZIVyjbsDey4TSVGEkO8aeOkcNk8kQ7qydASb2aUK0UmfpIkQnrvL/exec';
+        const SHEET_ID = '1M2G1oIv_eiVa3QKdpLeqTTl64CjAyuGsQLKucNpas0o';
+        const FOLDER_ID = '1p3Iu1x8H-QGmHO0tNIUiVY2uDHHgvuB_';
+
+        // Global variables
         let allPrompts = [];
         let filteredPrompts = [];
         let currentPage = 1;
-        let itemsPerPage = 6;
-
+        let pageSize = 12;
+        let totalPages = 1;
+        let editingIndex = -1;
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
             loadPrompts();
+            setupEventListeners();
         });
 
-        // Load prompts from Google Sheets
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('searchText').addEventListener('input', filterPrompts);
+            document.getElementById('searchType').addEventListener('change', filterPrompts);
+
+            // Form submission
+            document.getElementById('promptForm').addEventListener('submit', handleFormSubmit);
+
+            // Modal close on outside click
+            window.addEventListener('click', function(event) {
+                const modal = document.getElementById('promptModal');
+                const imageModal = document.getElementById('imageModal');
+                if (event.target === modal) {
+                    closeModal();
+                }
+                if (event.target === imageModal) {
+                    closeImageModal();
+                }
+            });
+        }
+
         async function loadPrompts() {
+            showLoading(true);
             try {
-                showLoading(true);
-                const response = await fetch(`${SCRIPT_URL}?action=getPrompts`);
+                const response = await fetch(`${API_ENDPOINT}?action=getPrompts`);
                 const data = await response.json();
                 
                 if (data.success) {
                     allPrompts = data.data || [];
-                    filteredPrompts = [...allPrompts];
-                    updateCategoryFilter();
-                    displayPrompts();
+                    populateTypeFilter();
+                    filterPrompts();
                 } else {
-                    throw new Error(data.error || 'Failed to load prompts');
+                    throw new Error(data.message || 'เกิดข้อผิดพลาดในการโหลดข้อมูล');
                 }
             } catch (error) {
                 console.error('Error loading prompts:', error);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้', 'error');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง'
+                });
             } finally {
                 showLoading(false);
             }
         }
 
-        // Display prompts
-        function displayPrompts() {
-            const grid = document.getElementById('promptsGrid');
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = itemsPerPage === 'all' ? filteredPrompts.length : startIndex + parseInt(itemsPerPage);
-            const pagePrompts = filteredPrompts.slice(startIndex, endIndex);
-
-            if (pagePrompts.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center py-12 text-gray-500"><i class="fas fa-search text-4xl mb-4"></i><br>ไม่พบข้อมูลที่ค้นหา</div>';
-            } else {
-                grid.innerHTML = pagePrompts.map(prompt => createPromptCard(prompt)).join('');
-            }
-
-            updatePagination();
-            grid.style.display = 'grid';
+        function populateTypeFilter() {
+            const typeSelect = document.getElementById('searchType');
+            const types = [...new Set(allPrompts.map(prompt => prompt.ประเภท))].filter(Boolean);
+            
+            // Clear existing options except "ทุกประเภท"
+            typeSelect.innerHTML = '<option value="">ทุกประเภท</option>';
+            
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                typeSelect.appendChild(option);
+            });
         }
 
-        // Create prompt card
-        function createPromptCard(prompt) {
-            let imageHtml;
-            if (prompt.ImageUrl) {
-                const viewableUrl = convertToViewableUrl(prompt.ImageUrl);
-                imageHtml = `<img src="${viewableUrl}" alt="${escapeHtml(prompt.ชื่อ || 'Prompt Image')}" class="w-full h-48 object-cover rounded-lg mb-4 cursor-pointer hover:opacity-90 transition-opacity" onclick="showImageModal('${escapeForJs(prompt.ImageUrl)}')" onerror="this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="w-full h-48 bg-gray-200 rounded-lg mb-4 items-center justify-center" style="display: none;">
-                    <i class="fas fa-image text-gray-400 text-3xl"></i>
-                    <p class="text-gray-500 text-sm mt-2">ไม่สามารถโหลดรูปได้</p>
-                </div>`;
-            } else {
-                imageHtml = '<div class="w-full h-48 bg-gray-200 rounded-lg mb-4 flex items-center justify-center"><i class="fas fa-image text-gray-400 text-3xl"></i></div>';
-            }
+        function filterPrompts() {
+            const searchText = document.getElementById('searchText').value.toLowerCase();
+            const searchType = document.getElementById('searchType').value;
 
-            // Process prompt text for display - handle very long text properly
-            let promptText = '';
-            let promptName = '';
-            let promptCategory = '';
-            
-            // Safely handle potentially undefined or very long text
-            try {
-                promptText = (prompt.prompt || '').toString().trim();
-                promptName = (prompt.ชื่อ || 'ไม่มีชื่อ').toString().trim();
-                promptCategory = (prompt.ประเภท || 'ไม่ระบุ').toString().trim();
+            filteredPrompts = allPrompts.filter(prompt => {
+                const matchesText = !searchText || 
+                    prompt.ชื่อ?.toLowerCase().includes(searchText) ||
+                    prompt.prompt?.toLowerCase().includes(searchText) ||
+                    prompt.ประเภท?.toLowerCase().includes(searchText);
                 
-                // Limit extremely long text to prevent performance issues
-                if (promptText.length > 10000) {
-                    promptText = promptText.substring(0, 10000) + '... [ข้อความถูกตัดเนื่องจากยาวเกินไป]';
-                }
-                if (promptName.length > 200) {
-                    promptName = promptName.substring(0, 200) + '...';
-                }
-                if (promptCategory.length > 100) {
-                    promptCategory = promptCategory.substring(0, 100) + '...';
-                }
-            } catch (e) {
-                console.error('Error processing prompt data:', e);
-                promptText = 'เกิดข้อผิดพลาดในการแสดงข้อความ';
-                promptName = 'ไม่สามารถแสดงชื่อได้';
-                promptCategory = 'ไม่ระบุ';
-            }
+                const matchesType = !searchType || prompt.ประเภท === searchType;
+                
+                return matchesText && matchesType;
+            });
+
+            currentPage = 1;
+            updatePagination();
+            renderPrompts();
+        }
+
+        function updatePagination() {
+            totalPages = Math.ceil(filteredPrompts.length / pageSize);
             
-            const maxLength = 180;
-            const isLongText = promptText.length > maxLength;
-            const displayText = isLongText ? promptText.substring(0, maxLength) + '...' : promptText;
-            const cardId = `card-${prompt.id || Math.random().toString(36).substr(2, 9)}`;
+            // Update pagination info
+            const start = (currentPage - 1) * pageSize + 1;
+            const end = Math.min(currentPage * pageSize, filteredPrompts.length);
+            document.getElementById('paginationInfo').textContent = 
+                `${start}-${end} จาก ${filteredPrompts.length} รายการ`;
 
-            // Format date safely
-            let formattedDate = 'ไม่ระบุวันที่';
-            try {
-                if (prompt.creatDate) {
-                    const date = new Date(prompt.creatDate);
-                    if (!isNaN(date.getTime())) {
-                        formattedDate = date.toLocaleDateString('th-TH');
-                    }
-                }
-            } catch (e) {
-                formattedDate = 'ไม่ระบุวันที่';
+            // Update page numbers
+            renderPageNumbers();
+        }
+
+        function renderPageNumbers() {
+            const pageNumbers = document.getElementById('pageNumbers');
+            pageNumbers.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+            if (endPage - startPage + 1 < maxVisible) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
             }
 
-            // Create safe escaped versions for HTML attributes
-            const safePromptText = escapeForJs(promptText);
-            const safePromptName = escapeForJs(promptName);
-            const safeImageUrl = escapeForJs(prompt.ImageUrl || '');
+            if (startPage > 1) {
+                addPageButton(1);
+                if (startPage > 2) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.textContent = '...';
+                    ellipsis.style.padding = '8px';
+                    pageNumbers.appendChild(ellipsis);
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                addPageButton(i);
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.textContent = '...';
+                    ellipsis.style.padding = '8px';
+                    pageNumbers.appendChild(ellipsis);
+                }
+                addPageButton(totalPages);
+            }
+        }
+
+        function addPageButton(pageNum) {
+            const button = document.createElement('button');
+            button.className = `btn ${pageNum === currentPage ? 'btn-primary' : 'btn-secondary'}`;
+            button.textContent = pageNum;
+            button.onclick = () => goToPage(pageNum);
+            document.getElementById('pageNumbers').appendChild(button);
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPages || page === currentPage) return;
+            currentPage = page;
+            updatePagination();
+            renderPrompts();
+        }
+
+        function changePageSize() {
+            pageSize = parseInt(document.getElementById('pageSize').value);
+            currentPage = 1;
+            updatePagination();
+            renderPrompts();
+        }
+
+        function renderPrompts() {
+            const grid = document.getElementById('cardsGrid');
+            const noData = document.getElementById('noData');
+            
+            if (filteredPrompts.length === 0) {
+                grid.style.display = 'none';
+                noData.style.display = 'block';
+                document.getElementById('pagination').style.display = 'none';
+                return;
+            }
+
+            grid.style.display = 'grid';
+            noData.style.display = 'none';
+            document.getElementById('pagination').style.display = 'flex';
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pagePrompts = filteredPrompts.slice(start, end);
+
+            grid.innerHTML = pagePrompts.map((prompt, index) => createPromptCard(prompt, start + index)).join('');
+        }
+
+        function createPromptCard(prompt, index) {
+            const imageHtml = prompt.ImageUrl ? 
+                `<img src="${prompt.ImageUrl}" alt="${prompt.ชื่อ}" class="card-image" onclick="showImageModal('${prompt.ImageUrl}')">` : '';
+            
+            const truncatedPrompt = prompt.prompt?.length > 200 ? 
+                prompt.prompt.substring(0, 200) + '...' : prompt.prompt || '';
+
+            const date = prompt.creatDate ? formatThaiDate(prompt.creatDate) : '';
 
             return `
-                <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow prompt-card p-6">
-                    ${imageHtml}
-                    <div class="card-content">
-                        <h3 class="prompt-name text-xl text-gray-800 mb-2 text-truncate" title="${escapeHtml(promptName)}">${escapeHtml(promptName)}</h3>
-                        <div class="flex items-center gap-2 mb-3 flex-wrap">
-                            <span class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
-                                <i class="fas fa-tag mr-1"></i>${escapeHtml(promptCategory)}
-                            </span>
-                            <span class="text-gray-500 text-sm">
-                                <i class="fas fa-calendar mr-1"></i>${formattedDate}
-                            </span>
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">${prompt.ชื่อ || 'ไม่มีชื่อ'}</div>
+                            ${date ? `<div class="card-date"><i class="fas fa-calendar"></i> ${date}</div>` : ''}
                         </div>
-                        <div class="prompt-text bg-gray-50 p-3 rounded-lg mb-4 text-sm text-gray-700" id="${cardId}-text">
-                            <div id="${cardId}-short" ${!isLongText ? 'style="display: block;"' : ''}>
-                                ${escapeHtml(displayText)}
-                                ${isLongText ? `<span class="expand-text" onclick="toggleText('${cardId}', true)">อ่านเพิ่มเติม</span>` : ''}
-                            </div>
-                            ${isLongText ? `
-                            <div id="${cardId}-full" style="display: none;">
-                                ${escapeHtml(promptText)}
-                                <span class="expand-text" onclick="toggleText('${cardId}', false)">ย่อข้อความ</span>
-                            </div>
-                            ` : ''}
-                        </div>
+                        <div class="card-type">${prompt.ประเภท || 'ไม่ระบุ'}</div>
                     </div>
-                    <div class="card-footer flex justify-between items-center">
-                        <button onclick="copyPromptSafe('${cardId}', event)" data-prompt-text="${escapeHtml(promptText)}" data-prompt-name="${escapeHtml(promptName)}" class="text-green-600 hover:text-green-700 p-2 rounded-lg hover:bg-green-50 transition-colors" title="คัดลอก">
-                            <i class="fas fa-copy"></i>
+                    ${imageHtml}
+                    <div class="card-prompt">${truncatedPrompt}</div>
+                    <div class="card-actions">
+                        <button class="btn btn-success btn-sm" onclick="copyPrompt('${escapeHtml(prompt.prompt || '')}')">
+                            <i class="fas fa-copy"></i> คัดลอก
                         </button>
-                        <div class="flex gap-2">
-                            <button onclick="editPrompt(${prompt.id || 0})" class="text-blue-600 hover:text-blue-700 p-2 rounded-lg hover:bg-blue-50 transition-colors" title="แก้ไข">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deletePromptSafe(${prompt.id || 0}, '${cardId}')" class="text-red-600 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors" title="ลบ">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="editPrompt(${index})">
+                            <i class="fas fa-edit"></i> แก้ไข
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deletePrompt(${index})">
+                            <i class="fas fa-trash"></i> ลบ
+                        </button>
                     </div>
                 </div>
             `;
         }
 
-        // Update category filter
-        function updateCategoryFilter() {
-            const categoryFilter = document.getElementById('categoryFilter');
-            const categories = [...new Set(allPrompts.map(p => p.ประเภท))].sort();
-            
-            categoryFilter.innerHTML = '<option value="">ทุกประเภท</option>' + 
-                categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
-        }
-
-        // Filter prompts
-        function filterPrompts() {
+        function formatThaiDate(dateString) {
+            if (!dateString) return '';
             try {
-                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-                const categoryFilter = document.getElementById('categoryFilter').value;
-
-                filteredPrompts = allPrompts.filter(prompt => {
-                    try {
-                        // Safely handle potentially undefined or very long text
-                        const promptName = (prompt.ชื่อ || '').toString().toLowerCase();
-                        const promptText = (prompt.prompt || '').toString().toLowerCase();
-                        const promptCategory = (prompt.ประเภท || '').toString().toLowerCase();
-                        
-                        const matchesSearch = !searchTerm || 
-                            promptName.includes(searchTerm) ||
-                            promptText.includes(searchTerm) ||
-                            promptCategory.includes(searchTerm);
-                        
-                        const matchesCategory = !categoryFilter || prompt.ประเภท === categoryFilter;
-                        
-                        return matchesSearch && matchesCategory;
-                    } catch (e) {
-                        console.error('Error filtering prompt:', e, prompt);
-                        return false; // Exclude problematic prompts from results
-                    }
-                });
-
-                currentPage = 1;
-                displayPrompts();
+                const date = new Date(dateString);
+                const thaiYear = date.getFullYear() + 543;
+                const months = [
+                    'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+                    'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'
+                ];
+                return `${date.getDate()} ${months[date.getMonth()]} ${thaiYear}`;
             } catch (error) {
-                console.error('Error in filterPrompts:', error);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถกรองข้อมูลได้', 'error');
+                return dateString;
             }
         }
 
-
-
-        // Change items per page
-        function changeItemsPerPage() {
-            itemsPerPage = document.getElementById('itemsPerPage').value;
-            currentPage = 1;
-            displayPrompts();
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML.replace(/'/g, '&#39;');
         }
 
-        // Update pagination
-        function updatePagination() {
-            const pagination = document.getElementById('pagination');
-            
-            if (itemsPerPage === 'all' || filteredPrompts.length <= itemsPerPage) {
-                pagination.style.display = 'none';
-                return;
-            }
-
-            const totalPages = Math.ceil(filteredPrompts.length / itemsPerPage);
-            let paginationHtml = '';
-
-            // Previous button
-            if (currentPage > 1) {
-                paginationHtml += `<button onclick="changePage(${currentPage - 1})" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"><i class="fas fa-chevron-left"></i></button>`;
-            }
-
-            // Page numbers
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === currentPage) {
-                    paginationHtml += `<button class="px-3 py-2 bg-indigo-600 text-white rounded-lg">${i}</button>`;
-                } else {
-                    paginationHtml += `<button onclick="changePage(${i})" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">${i}</button>`;
-                }
-            }
-
-            // Next button
-            if (currentPage < totalPages) {
-                paginationHtml += `<button onclick="changePage(${currentPage + 1})" class="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"><i class="fas fa-chevron-right"></i></button>`;
-            }
-
-            pagination.innerHTML = paginationHtml;
-            pagination.style.display = 'flex';
+        function copyPrompt(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'คัดลอกสำเร็จ!',
+                    text: 'Prompt ถูกคัดลอกไปยังคลิปบอร์ดแล้ว',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }).catch(() => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถคัดลอกได้'
+                });
+            });
         }
 
-        // Change page
-        function changePage(page) {
-            currentPage = page;
-            displayPrompts();
+        function showImageModal(imageUrl) {
+            document.getElementById('modalImage').src = imageUrl;
+            document.getElementById('imageModal').style.display = 'block';
         }
 
-        // Show/hide loading
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'flex' : 'none';
-            document.getElementById('promptsGrid').style.display = show ? 'none' : 'grid';
+        function closeImageModal() {
+            document.getElementById('imageModal').style.display = 'none';
         }
 
-        // Open add modal
         function openAddModal() {
+            editingIndex = -1;
             document.getElementById('modalTitle').textContent = 'เพิ่ม Prompt ใหม่';
             document.getElementById('promptForm').reset();
-            document.getElementById('editId').value = '';
-            document.getElementById('currentImage').style.display = 'none';
-            document.getElementById('promptModal').style.display = 'flex';
+            document.getElementById('promptModal').style.display = 'block';
         }
 
-        // Close modal
-        function closeModal() {
-            document.getElementById('promptModal').style.display = 'none';
-        }
-
-        // Save prompt
-        async function savePrompt(event) {
-            event.preventDefault();
+        function editPrompt(index) {
+            const actualIndex = (currentPage - 1) * pageSize + index;
+            const prompt = filteredPrompts[actualIndex];
             
-            const formData = new FormData();
-            const editId = document.getElementById('editId').value;
+            editingIndex = allPrompts.findIndex(p => 
+                p.ชื่อ === prompt.ชื่อ && 
+                p.ประเภท === prompt.ประเภท && 
+                p.prompt === prompt.prompt
+            );
             
-            formData.append('action', editId ? 'updatePrompt' : 'addPrompt');
-            if (editId) formData.append('id', editId);
-            formData.append('name', document.getElementById('promptName').value);
-            formData.append('category', document.getElementById('promptCategory').value);
-            formData.append('prompt', document.getElementById('promptText').value);
-            
-            const imageFile = document.getElementById('promptImage').files[0];
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
-
-            try {
-                Swal.fire({
-                    title: 'กำลังบันทึก...',
-                    allowOutsideClick: false,
-                    didOpen: () => Swal.showLoading()
-                });
-
-                const response = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    Swal.fire('สำเร็จ!', editId ? 'แก้ไขข้อมูลเรียบร้อย' : 'เพิ่มข้อมูลเรียบร้อย', 'success');
-                    closeModal();
-                    loadPrompts();
-                } else {
-                    throw new Error(result.error || 'Failed to save prompt');
-                }
-            } catch (error) {
-                console.error('Error saving prompt:', error);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
-            }
-        }
-
-        // Edit prompt
-        function editPrompt(id) {
-            const prompt = allPrompts.find(p => p.id === id);
-            if (!prompt) return;
-
             document.getElementById('modalTitle').textContent = 'แก้ไข Prompt';
-            document.getElementById('editId').value = id;
-            document.getElementById('promptName').value = prompt.ชื่อ;
-            document.getElementById('promptCategory').value = prompt.ประเภท;
-            document.getElementById('promptText').value = prompt.prompt;
-            
-            if (prompt.ImageUrl) {
-                document.getElementById('currentImage').style.display = 'block';
-                const viewableUrl = convertToViewableUrl(prompt.ImageUrl);
-                document.getElementById('currentImagePreview').src = viewableUrl;
-                document.getElementById('currentImagePreview').onerror = function() {
-                    this.style.display = 'none';
-                    this.parentElement.innerHTML = '<div class="w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center"><i class="fas fa-image text-gray-400"></i><br><span class="text-xs text-gray-500">ไม่สามารถโหลดรูปได้</span></div>';
-                };
-            } else {
-                document.getElementById('currentImage').style.display = 'none';
-            }
-
-            document.getElementById('promptModal').style.display = 'flex';
+            document.getElementById('promptName').value = prompt.ชื่อ || '';
+            document.getElementById('promptType').value = prompt.ประเภท || '';
+            document.getElementById('promptText').value = prompt.prompt || '';
+            document.getElementById('promptModal').style.display = 'block';
         }
 
-        // Delete prompt
-        async function deletePrompt(id, name) {
+        async function deletePrompt(index) {
+            const actualIndex = (currentPage - 1) * pageSize + index;
+            const prompt = filteredPrompts[actualIndex];
+            
             const result = await Swal.fire({
-                title: 'ยืนยันการลบ',
-                text: `คุณต้องการลบ "${name}" หรือไม่?`,
                 icon: 'warning',
+                title: 'ยืนยันการลบ',
+                text: `คุณต้องการลบ "${prompt.ชื่อ}" หรือไม่?`,
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
+                confirmButtonColor: '#e53e3e',
+                cancelButtonColor: '#a0aec0',
                 confirmButtonText: 'ลบ',
                 cancelButtonText: 'ยกเลิก'
             });
 
             if (result.isConfirmed) {
                 try {
-                    Swal.fire({
-                        title: 'กำลังลบ...',
-                        allowOutsideClick: false,
-                        didOpen: () => Swal.showLoading()
+                    const globalIndex = allPrompts.findIndex(p => 
+                        p.ชื่อ === prompt.ชื่อ && 
+                        p.ประเภท === prompt.ประเภท && 
+                        p.prompt === prompt.prompt
+                    );
+
+                    const response = await fetch(API_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            action: 'deletePrompt',
+                            index: globalIndex + 2 // +2 for header row and 0-based index
+                        })
                     });
 
-                    const response = await fetch(`${SCRIPT_URL}?action=deletePrompt&id=${id}`);
                     const data = await response.json();
-
+                    
                     if (data.success) {
-                        Swal.fire('ลบเรียบร้อย!', 'ข้อมูลถูกลบแล้ว', 'success');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'ลบสำเร็จ!',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
                         loadPrompts();
                     } else {
-                        throw new Error(data.error || 'Failed to delete prompt');
+                        throw new Error(data.message);
                     }
                 } catch (error) {
                     console.error('Error deleting prompt:', error);
-                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
-                }
-            }
-        }
-
-        // Copy prompt to clipboard - safe version with fallback
-        async function copyPromptSafe(cardId, event) {
-            try {
-                let promptText = '';
-                let promptName = '';
-                
-                // Try to get data from button attributes first (more reliable)
-                if (event && event.target) {
-                    const button = event.target.closest('button');
-                    if (button) {
-                        promptText = button.getAttribute('data-prompt-text') || '';
-                        promptName = button.getAttribute('data-prompt-name') || '';
-                    }
-                }
-                
-                // Fallback to finding prompt by ID
-                if (!promptText) {
-                    const prompt = findPromptByCardId(cardId);
-                    if (prompt) {
-                        promptText = (prompt.prompt || '').toString();
-                        promptName = (prompt.ชื่อ || 'ไม่มีชื่อ').toString();
-                    }
-                }
-                
-                if (!promptText || !promptText.trim()) {
-                    throw new Error('ไม่มีข้อความให้คัดลอก');
-                }
-                
-                // Try modern Clipboard API first
-                if (navigator.clipboard && window.isSecureContext) {
-                    try {
-                        await navigator.clipboard.writeText(promptText);
-                        showCopySuccess(promptName);
-                        return;
-                    } catch (clipboardError) {
-                        console.warn('Clipboard API failed, trying fallback method:', clipboardError);
-                    }
-                }
-                
-                // Fallback method using textarea selection
-                const success = copyTextFallback(promptText);
-                if (success) {
-                    showCopySuccess(promptName);
-                } else {
-                    throw new Error('ไม่สามารถคัดลอกได้ด้วยวิธีใดๆ');
-                }
-                
-            } catch (error) {
-                console.error('Error copying to clipboard:', error);
-                // Show copy modal as last resort
-                showCopyModal(promptText, promptName);
-            }
-        }
-
-        // Fallback copy method using textarea selection
-        function copyTextFallback(text) {
-            try {
-                // Create a temporary textarea element
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                textarea.style.position = 'fixed';
-                textarea.style.left = '-999999px';
-                textarea.style.top = '-999999px';
-                document.body.appendChild(textarea);
-                
-                // Select and copy the text
-                textarea.focus();
-                textarea.select();
-                textarea.setSelectionRange(0, textarea.value.length);
-                
-                const successful = document.execCommand('copy');
-                document.body.removeChild(textarea);
-                
-                return successful;
-            } catch (error) {
-                console.error('Fallback copy method failed:', error);
-                return false;
-            }
-        }
-
-        // Show copy success message
-        function showCopySuccess(promptName) {
-            Swal.fire({
-                title: 'คัดลอกเรียบร้อย!',
-                text: `คัดลอก "${promptName.length > 50 ? promptName.substring(0, 50) + '...' : promptName}" แล้ว`,
-                icon: 'success',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        }
-
-        // Show copy modal as last resort
-        function showCopyModal(text, name) {
-            Swal.fire({
-                title: 'คัดลอกข้อความ',
-                html: `
-                    <p class="mb-4 text-gray-600">กรุณาเลือกข้อความด้านล่างและกด Ctrl+C (หรือ Cmd+C บน Mac) เพื่อคัดลอก</p>
-                    <textarea id="copyTextArea" class="w-full h-40 p-3 border border-gray-300 rounded-lg text-sm" readonly>${text}</textarea>
-                `,
-                showCancelButton: true,
-                confirmButtonText: 'เลือกทั้งหมด',
-                cancelButtonText: 'ปิด',
-                didOpen: () => {
-                    const textarea = document.getElementById('copyTextArea');
-                    textarea.focus();
-                    textarea.select();
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const textarea = document.getElementById('copyTextArea');
-                    textarea.select();
-                    textarea.setSelectionRange(0, textarea.value.length);
-                }
-            });
-        }
-
-        // Copy prompt to clipboard - legacy version for backward compatibility
-        async function copyPrompt(promptText, name) {
-            try {
-                await navigator.clipboard.writeText(promptText);
-                Swal.fire({
-                    title: 'คัดลอกเรียบร้อย!',
-                    text: `คัดลอก "${name}" แล้ว`,
-                    icon: 'success',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            } catch (error) {
-                console.error('Error copying to clipboard:', error);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถคัดลอกได้', 'error');
-            }
-        }
-
-        // Delete prompt - safe version
-        async function deletePromptSafe(id, cardId) {
-            try {
-                const prompt = findPromptByCardId(cardId) || allPrompts.find(p => p.id === id);
-                if (!prompt) {
-                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่พบข้อมูลที่ต้องการลบ', 'error');
-                    return;
-                }
-                
-                const promptName = (prompt.ชื่อ || 'ไม่มีชื่อ').toString();
-                const displayName = promptName.length > 50 ? promptName.substring(0, 50) + '...' : promptName;
-                
-                const result = await Swal.fire({
-                    title: 'ยืนยันการลบ',
-                    text: `คุณต้องการลบ "${displayName}" หรือไม่?`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'ลบ',
-                    cancelButtonText: 'ยกเลิก'
-                });
-
-                if (result.isConfirmed) {
                     Swal.fire({
-                        title: 'กำลังลบ...',
-                        allowOutsideClick: false,
-                        didOpen: () => Swal.showLoading()
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'ไม่สามารถลบได้ กรุณาลองใหม่อีกครั้ง'
                     });
+                }
+            }
+        }
 
-                    const response = await fetch(`${SCRIPT_URL}?action=deletePrompt&id=${id}`);
-                    const data = await response.json();
+        function closeModal() {
+            document.getElementById('promptModal').style.display = 'none';
+            editingIndex = -1;
+        }
 
-                    if (data.success) {
-                        Swal.fire('ลบเรียบร้อย!', 'ข้อมูลถูกลบแล้ว', 'success');
-                        loadPrompts();
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('promptName').value.trim();
+            const type = document.getElementById('promptType').value.trim();
+            const text = document.getElementById('promptText').value.trim();
+            const imageFile = document.getElementById('imageFile').files[0];
+            const useLh3 = document.getElementById('useLh3').checked;
+
+            if (!name || !type || !text) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+                    text: 'ชื่อ, ประเภท และ prompt เป็นข้อมูลที่จำเป็น'
+                });
+                return;
+            }
+
+            try {
+                Swal.fire({
+                    title: 'กำลังบันทึก...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                let imageUrl = '';
+                
+                if (imageFile) {
+                    // Upload image first
+                    const formData = new FormData();
+                    formData.append('file', imageFile);
+                    formData.append('folderId', FOLDER_ID);
+                    formData.append('useLh3', useLh3);
+                    
+                    const uploadResponse = await fetch(`${API_ENDPOINT}?action=uploadImage`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const uploadData = await uploadResponse.json();
+                    
+                    if (uploadData.success) {
+                        imageUrl = uploadData.url;
                     } else {
-                        throw new Error(data.error || 'Failed to delete prompt');
+                        throw new Error('ไม่สามารถอัปโหลดรูปภาพได้');
                     }
                 }
+
+                // Save prompt
+                const promptData = {
+                    action: editingIndex >= 0 ? 'updatePrompt' : 'addPrompt',
+                    data: {
+                        ชื่อ: name,
+                        ประเภท: type,
+                        prompt: text,
+                        ImageUrl: imageUrl,
+                        creatDate: new Date().toISOString()
+                    }
+                };
+
+                if (editingIndex >= 0) {
+                    promptData.index = editingIndex + 2; // +2 for header row and 0-based index
+                }
+
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(promptData)
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: editingIndex >= 0 ? 'แก้ไขสำเร็จ!' : 'เพิ่มสำเร็จ!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    closeModal();
+                    loadPrompts();
+                } else {
+                    throw new Error(data.message);
+                }
             } catch (error) {
-                console.error('Error deleting prompt:', error);
-                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
+                console.error('Error saving prompt:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: error.message || 'ไม่สามารถบันทึกได้ กรุณาลองใหม่อีกครั้ง'
+                });
             }
         }
 
-        // Helper function to find prompt by card ID
-        function findPromptByCardId(cardId) {
-            try {
-                // Extract ID from cardId (format: card-{id})
-                const id = cardId.replace('card-', '');
-                
-                // Try to find by ID first
-                let prompt = allPrompts.find(p => p.id && p.id.toString() === id);
-                
-                // If not found and ID looks like a number, try parsing
-                if (!prompt && !isNaN(id)) {
-                    prompt = allPrompts.find(p => p.id && p.id === parseInt(id));
-                }
-                
-                // If still not found, try to find by index or other methods
-                if (!prompt) {
-                    console.warn('Prompt not found for cardId:', cardId, 'extracted id:', id);
-                    console.log('Available prompts:', allPrompts.map(p => ({ id: p.id, name: p.ชื่อ })));
-                }
-                
-                return prompt;
-            } catch (error) {
-                console.error('Error in findPromptByCardId:', error);
-                return null;
-            }
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('cardsGrid').style.display = show ? 'none' : 'grid';
         }
-
-        // Image URL utility functions
-        function extractFileIdFromUrl(url) {
-            if (!url) return null;
-            
-            // Handle different Google Drive URL formats
-            const patterns = [
-                /\/file\/d\/([a-zA-Z0-9-_]+)/,  // Standard Drive URLs
-                /id=([a-zA-Z0-9-_]+)/,          // uc?id= format
-                /\/d\/([a-zA-Z0-9-_]+)/,        // Short format
-                /lh3\.googleusercontent\.com\/.*=s\d+-c/,  // lh3 format
-                /lh5\.googleusercontent\.com\/.*=s\d+-c/   // lh5 format
-            ];
-            
-            for (const pattern of patterns) {
-                const match = url.match(pattern);
-                if (match && match[1]) {
-                    return match[1];
-                }
-            }
-            
-            // Handle lh3/lh5 URLs - extract from the URL structure
-            if (url.includes('lh3.googleusercontent.com') || url.includes('lh5.googleusercontent.com')) {
-                // These are already processed Google URLs, try to find file ID in the path
-                const pathMatch = url.match(/\/([a-zA-Z0-9-_]{25,})/);
-                if (pathMatch && pathMatch[1]) {
-                    return pathMatch[1];
-                }
-            }
-            
-            return null;
-        }
-
-        function convertToViewableUrl(url) {
-            if (!url) return '';
-            
-            // If it's already a lh3/lh5 URL, return as is (these work for viewing)
-            if (url.includes('lh3.googleusercontent.com') || url.includes('lh5.googleusercontent.com')) {
-                return url;
-            }
-            
-            // Extract file ID and convert to viewable format
-            const fileId = extractFileIdFromUrl(url);
-            if (fileId) {
-                return `https://drive.google.com/uc?export=view&id=${fileId}`;
-            }
-            
-            // If no file ID found, return original URL
-            return url;
-        }
-
-        function isValidImageUrl(url) {
-            if (!url) return false;
-            
-            // Check if it's a Google Drive URL (any format)
-            const googleDrivePatterns = [
-                /drive\.google\.com/,
-                /lh3\.googleusercontent\.com/,
-                /lh5\.googleusercontent\.com/,
-                /googleusercontent\.com/
-            ];
-            
-            return googleDrivePatterns.some(pattern => pattern.test(url));
-        }
-
-        // Show image modal
-        function showImageModal(imageUrl) {
-            const viewableUrl = convertToViewableUrl(imageUrl);
-            document.getElementById('modalImage').src = viewableUrl;
-            document.getElementById('imageModal').style.display = 'flex';
-        }
-
-        // Close image modal
-        function closeImageModal() {
-            document.getElementById('imageModal').style.display = 'none';
-        }
-
-        // Utility functions for text handling
-        function escapeHtml(text) {
-            if (!text) return '';
-            try {
-                // Convert to string and handle very long text
-                let str = text.toString();
-                
-                // Limit extremely long strings to prevent browser performance issues
-                if (str.length > 50000) {
-                    str = str.substring(0, 50000) + '... [ข้อความถูกตัดเนื่องจากยาวเกินไป]';
-                }
-                
-                const div = document.createElement('div');
-                div.textContent = str;
-                return div.innerHTML;
-            } catch (e) {
-                console.error('Error in escapeHtml:', e);
-                return 'เกิดข้อผิดพลาดในการแสดงข้อความ';
-            }
-        }
-
-        function escapeForJs(text) {
-            if (!text) return '';
-            try {
-                // Convert to string and handle special characters properly
-                let str = text.toString();
-                
-                // Limit extremely long strings for JavaScript safety
-                if (str.length > 10000) {
-                    str = str.substring(0, 10000) + '... [ข้อความถูกตัดเนื่องจากยาวเกินไป]';
-                }
-                
-                return str
-                    .replace(/\\/g, '\\\\')
-                    .replace(/'/g, "\\'")
-                    .replace(/"/g, '\\"')
-                    .replace(/\n/g, '\\n')
-                    .replace(/\r/g, '\\r')
-                    .replace(/\t/g, '\\t')
-                    .replace(/\f/g, '\\f')
-                    .replace(/\v/g, '\\v')
-                    .replace(/\u0000/g, '\\u0000')
-                    .replace(/\u0008/g, '\\u0008')
-                    .replace(/\u000b/g, '\\u000b')
-                    .replace(/\u000c/g, '\\u000c')
-                    .replace(/\u000e/g, '\\u000e')
-                    .replace(/\u000f/g, '\\u000f');
-            } catch (e) {
-                console.error('Error in escapeForJs:', e);
-                return 'error';
-            }
-        }
-
-        function toggleText(cardId, showFull) {
-            const shortDiv = document.getElementById(`${cardId}-short`);
-            const fullDiv = document.getElementById(`${cardId}-full`);
-            
-            if (showFull) {
-                shortDiv.style.display = 'none';
-                fullDiv.style.display = 'block';
-            } else {
-                shortDiv.style.display = 'block';
-                fullDiv.style.display = 'none';
-            }
-        }
-
-        // Close modals on escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeModal();
-                closeImageModal();
-            }
-        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97d07b4cc4c7a082',t:'MTc1NzUyMzYyNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e1202405dc40dc',t:'MTc1NzY5ODE1MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
