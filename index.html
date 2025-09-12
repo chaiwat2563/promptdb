@@ -836,7 +836,7 @@
                     ${dateHtml}
                     <div class="card-prompt">${promptText || 'ไม่มี prompt'}</div>
                     <div class="card-actions">
-                        <button class="btn btn-secondary" onclick="copyPrompt('${escapeHtml(promptText)}')" title="คัดลอก">
+                        <button class="btn btn-secondary" onclick="copyPromptText(${index})" title="คัดลอก">
                             <i class="fas fa-copy"></i>
                         </button>
                         <button class="btn btn-primary" onclick="editPrompt(${index})" title="แก้ไข">
@@ -953,9 +953,10 @@
             displayPrompts();
         }
 
-        // Copy prompt to clipboard
-        async function copyPrompt(promptText) {
-            if (!promptText) {
+        // Copy prompt to clipboard using index
+        async function copyPromptText(index) {
+            const prompt = filteredPrompts[index];
+            if (!prompt || !prompt[2]) {
                 Swal.fire({
                     icon: 'warning',
                     title: 'ไม่มีข้อความ',
@@ -964,6 +965,8 @@
                 });
                 return;
             }
+
+            const promptText = prompt[2];
 
             try {
                 await navigator.clipboard.writeText(promptText);
@@ -1021,7 +1024,12 @@
         // Edit prompt
         function editPrompt(index) {
             const prompt = filteredPrompts[index];
-            if (!prompt) return;
+            if (!prompt) {
+                console.error('Prompt not found at index:', index);
+                return;
+            }
+
+            console.log('Editing prompt:', prompt);
 
             isEditing = true;
             document.getElementById('modalTitle').textContent = 'แก้ไข Prompt';
@@ -1059,9 +1067,23 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
-                        const originalIndex = allPrompts.findIndex(p => 
-                            p[0] === prompt[0] && p[1] === prompt[1] && p[2] === prompt[2]
-                        );
+                        // Find the original index in allPrompts array
+                        let originalIndex = -1;
+                        for (let i = 0; i < allPrompts.length; i++) {
+                            if (allPrompts[i][0] === prompt[0] && 
+                                allPrompts[i][1] === prompt[1] && 
+                                allPrompts[i][2] === prompt[2] &&
+                                allPrompts[i][3] === prompt[3]) {
+                                originalIndex = i;
+                                break;
+                            }
+                        }
+
+                        if (originalIndex === -1) {
+                            throw new Error('ไม่พบข้อมูลที่ต้องการลบ');
+                        }
+
+                        console.log('Deleting prompt at index:', originalIndex + 2);
 
                         const response = await fetch(CONFIG.API_ENDPOINT, {
                             method: 'POST',
@@ -1076,7 +1098,16 @@
                             })
                         });
 
-                        const data = await response.json();
+                        const responseText = await response.text();
+                        console.log('Delete response:', responseText);
+
+                        let data;
+                        try {
+                            data = JSON.parse(responseText);
+                        } catch (parseError) {
+                            console.error('Parse error:', parseError);
+                            throw new Error('ได้รับข้อมูลที่ไม่ถูกต้องจากเซิร์ฟเวอร์');
+                        }
                         
                         if (data.success) {
                             Swal.fire({
@@ -1086,16 +1117,16 @@
                                 timer: 1500,
                                 showConfirmButton: false
                             });
-                            loadPrompts();
+                            await loadPrompts();
                         } else {
-                            throw new Error(data.error || 'Failed to delete prompt');
+                            throw new Error(data.error || 'ไม่สามารถลบข้อมูลได้');
                         }
                     } catch (error) {
                         console.error('Error deleting prompt:', error);
                         Swal.fire({
                             icon: 'error',
                             title: 'เกิดข้อผิดพลาด',
-                            text: 'ไม่สามารถลบ prompt ได้ กรุณาลองใหม่อีกครั้ง',
+                            text: error.message || 'ไม่สามารถลบ prompt ได้ กรุณาลองใหม่อีกครั้ง',
                             confirmButtonColor: '#667eea'
                         });
                     }
@@ -1145,11 +1176,16 @@
                 return;
             }
 
+            let loadingSwal;
+            
             try {
                 // Show loading
-                Swal.fire({
+                loadingSwal = Swal.fire({
                     title: 'กำลังบันทึก...',
+                    html: 'กรุณารอสักครู่...',
                     allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
                     didOpen: () => {
                         Swal.showLoading();
                     }
@@ -1159,21 +1195,30 @@
                 
                 // Upload image if provided
                 if (imageFile) {
-                    const formData = new FormData();
-                    formData.append('file', imageFile);
-                    formData.append('folderId', CONFIG.FOLDER_ID);
-                    formData.append('useLh3', useLh3);
-                    
-                    const uploadResponse = await fetch(`${CONFIG.API_ENDPOINT}?action=uploadImage`, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const uploadData = await uploadResponse.json();
-                    if (uploadData.success) {
-                        imageUrl = uploadData.imageUrl;
-                    } else {
-                        throw new Error(uploadData.error || 'Failed to upload image');
+                    try {
+                        console.log('Uploading image...');
+                        const formData = new FormData();
+                        formData.append('file', imageFile);
+                        formData.append('folderId', CONFIG.FOLDER_ID);
+                        formData.append('useLh3', useLh3.toString());
+                        
+                        const uploadResponse = await fetch(CONFIG.API_ENDPOINT, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (uploadResponse.ok) {
+                            const uploadData = await uploadResponse.json();
+                            if (uploadData.success) {
+                                imageUrl = uploadData.imageUrl;
+                                console.log('Image uploaded successfully:', imageUrl);
+                            } else {
+                                console.warn('Image upload failed:', uploadData.error);
+                            }
+                        }
+                    } catch (uploadError) {
+                        console.warn('Image upload error:', uploadError);
+                        // Continue without image
                     }
                 } else if (isEditing) {
                     // Keep existing image URL if editing and no new image
@@ -1182,60 +1227,127 @@
                     imageUrl = existingPrompt[3] || '';
                 }
 
-                // Create current date in Thai Buddhist Era
+                // Create current date in Thai format
                 const now = new Date();
                 const thaiYear = now.getFullYear() + 543;
                 const createDate = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${thaiYear}`;
 
-                const promptData = {
-                    action: isEditing ? 'updatePrompt' : 'addPrompt',
+                // Prepare request data
+                const requestData = {
                     sheetId: CONFIG.SHEET_ID,
                     sheetName: CONFIG.SHEET_NAME,
-                    data: [name, category, promptText, imageUrl, createDate]
+                    name: name,
+                    category: category,
+                    prompt: promptText,
+                    imageUrl: imageUrl,
+                    createDate: createDate
                 };
+
+                let response;
 
                 if (isEditing) {
                     const editIndex = parseInt(document.getElementById('editIndex').value);
                     const originalPrompt = filteredPrompts[editIndex];
-                    const originalIndex = allPrompts.findIndex(p => 
-                        p[0] === originalPrompt[0] && p[1] === originalPrompt[1] && p[2] === originalPrompt[2]
-                    );
-                    promptData.index = originalIndex + 2; // +2 for header row and 0-based index
+                    
+                    // Find the original index in allPrompts array more accurately
+                    let originalIndex = -1;
+                    for (let i = 0; i < allPrompts.length; i++) {
+                        if (allPrompts[i][0] === originalPrompt[0] && 
+                            allPrompts[i][1] === originalPrompt[1] && 
+                            allPrompts[i][2] === originalPrompt[2] &&
+                            allPrompts[i][3] === originalPrompt[3]) {
+                            originalIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (originalIndex === -1) {
+                        throw new Error('ไม่พบข้อมูลที่ต้องการแก้ไข');
+                    }
+                    
+                    requestData.action = 'updatePrompt';
+                    requestData.index = originalIndex + 2; // +2 for header row and 0-based index
+                    
+                    console.log('Updating prompt at index:', originalIndex + 2, 'with data:', requestData);
+                    
+                    response = await fetch(CONFIG.API_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+                } else {
+                    requestData.action = 'addPrompt';
+                    
+                    console.log('Adding new prompt with data:', requestData);
+                    
+                    response = await fetch(CONFIG.API_ENDPOINT, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
+                    });
                 }
 
-                const response = await fetch(CONFIG.API_ENDPOINT, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(promptData)
+                console.log('Request data:', requestData);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const responseText = await response.text();
+                console.log('Response:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('Parse error:', parseError);
+                    console.error('Response text:', responseText);
+                    throw new Error('ได้รับข้อมูลที่ไม่ถูกต้องจากเซิร์ฟเวอร์');
+                }
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'ไม่สามารถบันทึกข้อมูลได้');
+                }
+
+                // Close loading dialog
+                if (loadingSwal) {
+                    Swal.close();
+                }
+
+                // Show success message
+                Swal.fire({
+                    icon: 'success',
+                    title: isEditing ? 'แก้ไขสำเร็จ!' : 'เพิ่มสำเร็จ!',
+                    text: isEditing ? 'แก้ไข prompt เรียบร้อยแล้ว' : 'เพิ่ม prompt ใหม่เรียบร้อยแล้ว',
+                    timer: 2000,
+                    showConfirmButton: false
                 });
 
-                const data = await response.json();
-                
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: isEditing ? 'แก้ไขสำเร็จ!' : 'เพิ่มสำเร็จ!',
-                        text: isEditing ? 'แก้ไข prompt เรียบร้อยแล้ว' : 'เพิ่ม prompt ใหม่เรียบร้อยแล้ว',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
-                    closeModal();
-                    loadPrompts();
-                } else {
-                    throw new Error(data.error || 'Failed to save prompt');
-                }
+                closeModal();
+                await loadPrompts();
+
             } catch (error) {
                 console.error('Error saving prompt:', error);
+                
+                // Close loading dialog
+                if (loadingSwal) {
+                    Swal.close();
+                }
+
+                // Show error message
                 Swal.fire({
                     icon: 'error',
                     title: 'เกิดข้อผิดพลาด',
-                    text: 'ไม่สามารถบันทึก prompt ได้ กรุณาลองใหม่อีกครั้ง',
-                    confirmButtonColor: '#667eea'
+                    text: error.message || 'ไม่สามารถบันทึก prompt ได้ กรุณาลองใหม่อีกครั้ง',
+                    confirmButtonColor: '#667eea',
+                    footer: 'หากปัญหายังคงอยู่ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต'
                 });
             }
         }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e17f90b40349c6',t:'MTc1NzcwMjA1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e19614c60b5fe4',t:'MTc1NzcwMjk4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
