@@ -3,1351 +3,621 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prompt Database v.21</title>
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+    <title>ระบบจัดเก็บ Prompt สำหรับสร้างรูปภาพและวีดิโอ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Kanit', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        /* Header */
-        .header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            text-align: center;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        }
-
-        .header h1 {
-            font-family: 'Prompt', sans-serif;
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #4a5568;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            font-size: 1.1rem;
-            color: #718096;
-            font-weight: 400;
-        }
-
-        /* Controls */
-        .controls {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .controls-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .search-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            flex: 1;
-        }
-
-        .search-input, .category-select {
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-family: 'Kanit', sans-serif;
-            font-size: 14px;
-            transition: all 0.3s ease;
-            min-width: 200px;
-        }
-
-        .search-input:focus, .category-select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 10px;
-            font-family: 'Kanit', sans-serif;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-secondary {
-            background: #f7fafc;
-            color: #4a5568;
-            border: 2px solid #e2e8f0;
-        }
-
-        .btn-secondary:hover {
-            background: #edf2f7;
-            border-color: #cbd5e0;
-        }
-
-        .btn-danger {
-            background: #e53e3e;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #c53030;
-        }
-
-        .btn-success {
-            background: #38a169;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #2f855a;
-        }
-
-        /* Loading */
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: white;
-            font-size: 1.2rem;
-        }
-
-        .spinner {
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top: 4px solid white;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Cards Grid */
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 25px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
-        }
-
-        .card-title {
-            font-family: 'Prompt', sans-serif;
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 5px;
-        }
-
-        .card-category {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .card-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .card-image:hover {
-            transform: scale(1.02);
-        }
-
-        .card-prompt {
-            background: #f7fafc;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-            max-height: 120px;
-            overflow-y: auto;
-            font-size: 0.9rem;
-            line-height: 1.6;
-            border-left: 4px solid #667eea;
-        }
-
-        .card-prompt::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .card-prompt::-webkit-scrollbar-track {
-            background: #e2e8f0;
-            border-radius: 3px;
-        }
-
-        .card-prompt::-webkit-scrollbar-thumb {
-            background: #cbd5e0;
-            border-radius: 3px;
-        }
-
-        .card-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-        }
-
-        .card-date {
-            font-size: 0.8rem;
-            color: #718096;
-            margin-bottom: 15px;
-        }
-
-        /* Pagination */
-        .pagination-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .pagination-info {
-            text-align: center;
-            margin-bottom: 15px;
-            color: #4a5568;
-        }
-
-        .pagination-controls {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .page-size-control {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-left: auto;
-        }
-
-        .page-btn {
-            padding: 8px 12px;
-            border: 2px solid #e2e8f0;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Kanit', sans-serif;
-        }
-
-        .page-btn:hover {
-            border-color: #667eea;
-            background: #f7fafc;
-        }
-
-        .page-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: transparent;
-        }
-
-        .page-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            background: white;
-            margin: 2% auto;
-            padding: 0;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 30px;
-            border-radius: 15px 15px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h2 {
-            font-family: 'Prompt', sans-serif;
-            font-weight: 600;
-            margin: 0;
-        }
-
-        .close {
-            color: white;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .close:hover {
-            transform: scale(1.1);
-        }
-
-        .modal-body {
-            padding: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #2d3748;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-family: 'Kanit', sans-serif;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        textarea.form-control {
-            resize: vertical;
-            min-height: 120px;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .checkbox-group input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-        }
-
-        /* Image Preview */
-        .image-preview {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 10px;
-            margin-top: 10px;
-            display: none;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-
-            .header h1 {
-                font-size: 2rem;
-            }
-
-            .controls-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .search-group {
-                flex-direction: column;
-            }
-
-            .search-input, .category-select {
-                min-width: auto;
-            }
-
-            .cards-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .card-actions {
-                flex-wrap: wrap;
-            }
-
-            .pagination-controls {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .page-size-control {
-                margin-left: 0;
-                justify-content: center;
-            }
-
-            .modal-content {
-                width: 95%;
-                margin: 5% auto;
-            }
-
-            .modal-body {
-                padding: 20px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .header {
-                padding: 20px;
-            }
-
-            .header h1 {
-                font-size: 1.8rem;
-            }
-
-            .controls {
-                padding: 20px;
-            }
-
-            .btn {
-                padding: 10px 16px;
-                font-size: 14px;
-            }
-
-            .card-title {
-                font-size: 1.1rem;
-            }
-        }
-
-        /* No data message */
-        .no-data {
-            text-align: center;
-            padding: 60px 20px;
-            color: white;
-            font-size: 1.2rem;
-        }
-
-        .no-data i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.7;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Kanit', sans-serif; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        .scroll-description { max-height: 120px; overflow-y: auto; }
+        .scroll-description::-webkit-scrollbar { width: 4px; }
+        .scroll-description::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 2px; }
+        .scroll-description::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 2px; }
+        .scroll-description::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .toast { transform: translateX(100%); transition: transform 0.3s ease; }
+        .toast.show { transform: translateX(0); }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <h1><i class="fas fa-robot"></i> Prompt Database v.21</h1>
-            <p>จัดทำโดย ชัยวัฒน์ พรหมมา</p>
-        </div>
-
-        <!-- Controls -->
-        <div class="controls">
-            <div class="controls-row">
-                <div class="search-group">
-                    <input type="text" id="searchInput" class="search-input" placeholder="ค้นหา prompt...">
-                    <select id="categoryFilter" class="category-select">
-                        <option value="">ทุกประเภท</option>
-                    </select>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-indigo-500">
+        <div class="container mx-auto px-6 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="bg-indigo-500 p-3 rounded-xl">
+                        <i class="fas fa-image text-white text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-800">ระบบจัดเก็บ Prompt</h1>
+                        <p class="text-gray-600">สำหรับสร้างรูปภาพและวีดิโอ</p>
+                    </div>
                 </div>
-                <button class="btn btn-primary" onclick="openAddModal()">
-                    <i class="fas fa-plus"></i> เพิ่ม Prompt
+                <div class="flex items-center space-x-4">
+                    <button onclick="refreshData()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>รีเฟรช
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Add Prompt Form -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold text-gray-800">
+                    <i class="fas fa-plus-circle text-indigo-500 mr-2"></i>เพิ่ม Prompt ใหม่
+                </h2>
+                <button id="toggleFormBtn" onclick="toggleAddForm()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-2"></i>เพิ่ม Prompt
                 </button>
             </div>
-        </div>
-
-        <!-- Loading -->
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <div>กำลังโหลดข้อมูล...</div>
-        </div>
-
-        <!-- Cards Grid -->
-        <div id="cardsContainer" class="cards-grid" style="display: none;"></div>
-
-        <!-- No Data -->
-        <div id="noData" class="no-data" style="display: none;">
-            <i class="fas fa-search"></i>
-            <div>ไม่พบข้อมูลที่ค้นหา</div>
-        </div>
-
-        <!-- Pagination -->
-        <div id="paginationContainer" class="pagination-container" style="display: none;">
-            <div class="pagination-info">
-                <span id="paginationInfo"></span>
-            </div>
-            <div class="pagination-controls">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <button class="page-btn" id="firstBtn" onclick="goToPage(1)">
-                        <i class="fas fa-angle-double-left"></i>
-                    </button>
-                    <button class="page-btn" id="prevBtn" onclick="goToPage(currentPage - 1)">
-                        <i class="fas fa-angle-left"></i>
-                    </button>
-                    <div id="pageNumbers"></div>
-                    <button class="page-btn" id="nextBtn" onclick="goToPage(currentPage + 1)">
-                        <i class="fas fa-angle-right"></i>
-                    </button>
-                    <button class="page-btn" id="lastBtn" onclick="goToPage(totalPages)">
-                        <i class="fas fa-angle-double-right"></i>
-                    </button>
-                </div>
-                <div class="page-size-control">
-                    <label for="pageSize">แสดง:</label>
-                    <select id="pageSize" class="form-control" style="width: auto; min-width: 80px;" onchange="changePageSize()">
-                        <option value="6">6</option>
-                        <option value="12" selected>12</option>
-                        <option value="24">24</option>
-                        <option value="48">48</option>
-                    </select>
-                    <span>รายการ</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add/Edit Modal -->
-    <div id="promptModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">เพิ่ม Prompt ใหม่</h2>
-                <span class="close" onclick="closeModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form id="promptForm">
-                    <input type="hidden" id="editIndex" value="">
-                    
-                    <div class="form-group">
-                        <label for="promptName">ชื่อ Prompt *</label>
-                        <input type="text" id="promptName" class="form-control" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="promptCategory">ประเภท *</label>
-                        <input type="text" id="promptCategory" class="form-control" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="promptText">Prompt *</label>
-                        <textarea id="promptText" class="form-control" required placeholder="กรอก prompt ของคุณที่นี่..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="promptImage">รูปภาพ</label>
-                        <input type="file" id="promptImage" class="form-control" accept="image/*" onchange="previewImage()">
-                        <img id="imagePreview" class="image-preview" alt="Preview">
-                        <div class="checkbox-group">
-                            <input type="checkbox" id="useLh3" checked>
-                            <label for="useLh3">ใช้รูปแบบ lh3 (แนะนำ)</label>
+            
+            <div id="addPromptForm" class="hidden">
+                <form onsubmit="addPrompt(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">ชื่อ Prompt *</label>
+                            <input type="text" id="promptName" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="ใส่ชื่อ prompt">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">ประเภท *</label>
+                            <select id="promptType" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <option value="">เลือกประเภท</option>
+                                <option value="image">รูปภาพ</option>
+                                <option value="video">วีดิโอ</option>
+                            </select>
                         </div>
                     </div>
-
-                    <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px;">
-                        <button type="button" class="btn btn-secondary" onclick="closeModal()">
-                            <i class="fas fa-times"></i> ยกเลิก
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">URL รูปภาพ (ไม่บังคับ)</label>
+                        <input type="url" id="promptImageURL" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">คำอธิบาย Prompt *</label>
+                        <textarea id="promptDescription" required rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" placeholder="ใส่คำอธิบาย prompt ที่ละเอียด..."></textarea>
+                    </div>
+                    <div class="flex space-x-4">
+                        <button type="submit" id="submitBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-save mr-2"></i>บันทึก
                         </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> บันทึก
+                        <button type="button" onclick="cancelAddForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-times mr-2"></i>ยกเลิก
                         </button>
                     </div>
                 </form>
             </div>
         </div>
+
+        <!-- Controls -->
+        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                <div class="flex items-center space-x-4">
+                    <label class="text-gray-700 font-medium">แสดงต่อหน้า:</label>
+                    <select id="itemsPerPage" onchange="changeItemsPerPage()" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="10">10 รายการ</option>
+                        <option value="20">20 รายการ</option>
+                        <option value="50">50 รายการ</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <label class="text-gray-700 font-medium">ประเภท:</label>
+                    <select id="typeFilter" onchange="filterByType()" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <option value="">ทั้งหมด</option>
+                        <option value="image">รูปภาพ</option>
+                        <option value="video">วีดิโอ</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+            <div class="loading-spinner inline-block w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+            <p class="text-gray-600 mt-4">กำลังโหลดข้อมูล...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+            <i class="fas fa-exclamation-triangle text-red-500 text-3xl mb-4"></i>
+            <h3 class="text-red-800 font-semibold text-lg mb-2">เกิดข้อผิดพลาด</h3>
+            <p class="text-red-600 mb-4">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
+            <button onclick="refreshData()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                <i class="fas fa-redo mr-2"></i>ลองใหม่
+            </button>
+        </div>
+
+        <!-- Cards Grid -->
+        <div id="cardsContainer" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Cards will be inserted here -->
+        </div>
+
+        <!-- Pagination -->
+        <div id="paginationContainer" class="hidden bg-white rounded-xl shadow-lg p-6">
+            <div class="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
+                <div class="text-gray-600 text-sm">
+                    แสดง <span id="showingStart">1</span>-<span id="showingEnd">10</span> จาก <span id="totalItems">0</span> รายการ
+                </div>
+                <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <!-- Jump to page -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-600">ไปหน้า:</span>
+                        <input type="number" id="jumpToPage" min="1" class="w-16 px-2 py-1 border border-gray-300 rounded text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" onkeypress="handleJumpToPage(event)">
+                        <span class="text-sm text-gray-600">จาก <span id="totalPages">1</span></span>
+                    </div>
+                    <!-- Pagination buttons -->
+                    <div class="flex items-center space-x-1" id="paginationButtons">
+                        <!-- Pagination buttons will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="toastMessage">คัดลอกสำเร็จ!</span>
+        </div>
+    </div>
+
+    <!-- Modal for Full Description -->
+    <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-gray-800" id="modalTitle">รายละเอียด Prompt</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div id="modalContent" class="text-gray-700 leading-relaxed whitespace-pre-wrap"></div>
+            </div>
+            <div class="p-6 border-t border-gray-200">
+                <button onclick="copyModalContent()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-copy mr-2"></i>คัดลอก
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Configuration
-        const CONFIG = {
-            SHEET_ID: '1M2G1oIv_eiVa3QKdpLeqTTl64CjAyuGsQLKucNpas0o',
-            FOLDER_ID: '1p3Iu1x8H-QGmHO0tNIUiVY2uDHHgvuB_',
-            API_ENDPOINT: 'https://script.google.com/macros/s/AKfycbzrMYdaJiOxejvWZIVyjbsDey4TSVGEkO8aeOkcNk8kQ7qydASb2aUK0UmfpIkQnrvL/exec',
-            SHEET_NAME: 'prompt',
-            COLUMNS: ['ชื่อ', 'ประเภท', 'prompt', 'ImageUrl', 'creatDate']
-        };
-
         // Global variables
         let allPrompts = [];
         let filteredPrompts = [];
         let currentPage = 1;
-        let pageSize = 12;
-        let totalPages = 1;
-        let isEditing = false;
+        let itemsPerPage = 10;
+        let currentModalContent = '';
 
-        // Initialize app
+        // API Configuration
+        const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxFUrQiPtN9wKorD-_P2ICdo7_zlmDrL2V5U1rXMc0dVP6H75-6Gmh6FChKUm0kcIMo8g/exec';
+
+        // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            loadPrompts();
-            setupEventListeners();
+            loadData();
         });
 
-        function setupEventListeners() {
-            // Search functionality
-            document.getElementById('searchInput').addEventListener('input', debounce(filterPrompts, 300));
-            document.getElementById('categoryFilter').addEventListener('change', filterPrompts);
-
-            // Form submission
-            document.getElementById('promptForm').addEventListener('submit', handleFormSubmit);
-
-            // Modal close on outside click
-            window.addEventListener('click', function(event) {
-                const modal = document.getElementById('promptModal');
-                if (event.target === modal) {
-                    closeModal();
-                }
-            });
-        }
-
-        // Debounce function for search
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // Load prompts from Google Sheets
-        async function loadPrompts() {
+        // Load data from Google Sheets
+        async function loadData() {
+            showLoading();
             try {
-                showLoading(true);
-                
-                const response = await fetch(`${CONFIG.API_ENDPOINT}?action=getPrompts&sheetId=${CONFIG.SHEET_ID}&sheetName=${CONFIG.SHEET_NAME}`);
+                const response = await fetch(API_ENDPOINT);
                 const data = await response.json();
                 
-                if (data.success) {
-                    allPrompts = data.data || [];
-                    populateCategories();
-                    filterPrompts();
+                if (data.success && Array.isArray(data.data)) {
+                    allPrompts = data.data.map((row, index) => ({
+                        id: row[0] || index + 1,
+                        name: row[1] || 'ไม่มีชื่อ',
+                        description: row[2] || 'ไม่มีคำอธิบาย',
+                        imageURL: row[3] || '',
+                        type: row[4] || 'image',
+                        date: row[5] || new Date().toLocaleDateString('th-TH')
+                    }));
+                    
+                    filteredPrompts = [...allPrompts];
+                    displayPrompts();
+                    hideLoading();
                 } else {
-                    throw new Error(data.error || 'Failed to load prompts');
+                    throw new Error('Invalid data format');
                 }
             } catch (error) {
-                console.error('Error loading prompts:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เกิดข้อผิดพลาด',
-                    text: 'ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
-                    confirmButtonColor: '#667eea'
-                });
-            } finally {
-                showLoading(false);
+                console.error('Error loading data:', error);
+                showError();
             }
-        }
-
-        // Show/hide loading
-        function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
-            document.getElementById('cardsContainer').style.display = show ? 'none' : 'grid';
-            document.getElementById('paginationContainer').style.display = show ? 'none' : 'block';
-        }
-
-        // Populate category filter
-        function populateCategories() {
-            const categories = [...new Set(allPrompts.map(prompt => prompt[1]).filter(cat => cat))];
-            const categoryFilter = document.getElementById('categoryFilter');
-            
-            // Clear existing options except "ทุกประเภท"
-            categoryFilter.innerHTML = '<option value="">ทุกประเภท</option>';
-            
-            categories.forEach(category => {
-                const option = document.createElement('option');
-                option.value = category;
-                option.textContent = category;
-                categoryFilter.appendChild(option);
-            });
-        }
-
-        // Filter prompts
-        function filterPrompts() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const selectedCategory = document.getElementById('categoryFilter').value;
-
-            filteredPrompts = allPrompts.filter(prompt => {
-                const matchesSearch = !searchTerm || 
-                    prompt[0]?.toLowerCase().includes(searchTerm) || 
-                    prompt[2]?.toLowerCase().includes(searchTerm);
-                
-                const matchesCategory = !selectedCategory || prompt[1] === selectedCategory;
-                
-                return matchesSearch && matchesCategory;
-            });
-
-            currentPage = 1;
-            displayPrompts();
         }
 
         // Display prompts
         function displayPrompts() {
             const container = document.getElementById('cardsContainer');
-            const noDataDiv = document.getElementById('noData');
-            
-            if (filteredPrompts.length === 0) {
-                container.style.display = 'none';
-                noDataDiv.style.display = 'block';
-                document.getElementById('paginationContainer').style.display = 'none';
-                return;
-            }
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pagePrompts = filteredPrompts.slice(startIndex, endIndex);
 
-            noDataDiv.style.display = 'none';
-            container.style.display = 'grid';
-            document.getElementById('paginationContainer').style.display = 'block';
+            container.innerHTML = '';
 
-            // Calculate pagination
-            totalPages = Math.ceil(filteredPrompts.length / pageSize);
-            const startIndex = (currentPage - 1) * pageSize;
-            const endIndex = startIndex + pageSize;
-            const currentPrompts = filteredPrompts.slice(startIndex, endIndex);
-
-            // Generate cards HTML
-            container.innerHTML = currentPrompts.map((prompt, index) => {
-                const globalIndex = startIndex + index;
-                return createPromptCard(prompt, globalIndex);
-            }).join('');
+            pagePrompts.forEach((prompt, index) => {
+                const card = createPromptCard(prompt, startIndex + index);
+                container.appendChild(card);
+            });
 
             updatePagination();
+            container.classList.remove('hidden');
+            document.getElementById('paginationContainer').classList.remove('hidden');
         }
 
-        // Create prompt card HTML
+        // Create prompt card
         function createPromptCard(prompt, index) {
-            const [name, category, promptText, imageUrl, createDate] = prompt;
-            const truncatedPrompt = promptText && promptText.length > 150 ? 
-                promptText.substring(0, 150) + '...' : promptText;
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl shadow-lg card-hover fade-in';
+            
+            const truncatedDescription = prompt.description.length > 150 
+                ? prompt.description.substring(0, 150) + '...' 
+                : prompt.description;
 
-            const imageHtml = imageUrl ? 
-                `<img src="${imageUrl}" alt="${name}" class="card-image" onclick="showImageModal('${imageUrl}', '${name}')">` : '';
+            const typeIcon = prompt.type === 'video' ? 'fa-video' : 'fa-image';
+            const typeColor = prompt.type === 'video' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600';
 
-            const dateHtml = createDate ? 
-                `<div class="card-date"><i class="fas fa-calendar-alt"></i> ${formatDate(createDate)}</div>` : '';
-
-            return `
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <div class="card-title">${name || 'ไม่มีชื่อ'}</div>
-                            ${category ? `<div class="card-category">${category}</div>` : ''}
+            card.innerHTML = `
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="${typeColor} p-2 rounded-lg">
+                                <i class="fas ${typeIcon}"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-gray-800 text-lg">${prompt.name}</h3>
+                                <p class="text-sm text-gray-500">${prompt.date}</p>
+                            </div>
                         </div>
+                        <span class="${typeColor} px-3 py-1 rounded-full text-xs font-medium">
+                            ${prompt.type === 'video' ? 'วีดิโอ' : 'รูปภาพ'}
+                        </span>
                     </div>
-                    ${imageHtml}
-                    ${dateHtml}
-                    <div class="card-prompt">${promptText || 'ไม่มี prompt'}</div>
-                    <div class="card-actions">
-                        <button class="btn btn-secondary" onclick="copyPromptText(${index})" title="คัดลอก">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                        <button class="btn btn-primary" onclick="editPrompt(${index})" title="แก้ไข">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-danger" onclick="deletePrompt(${index})" title="ลบ">
-                            <i class="fas fa-trash"></i>
+                    
+                    ${prompt.imageURL ? `
+                        <div class="mb-4">
+                            <img src="${prompt.imageURL}" alt="${prompt.name}" 
+                                 class="w-full h-32 object-cover rounded-lg"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <div class="hidden w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-image text-gray-400 text-2xl"></i>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="mb-4">
+                        <div class="scroll-description text-gray-700 text-sm leading-relaxed">
+                            ${truncatedDescription}
+                        </div>
+                        ${prompt.description.length > 150 ? `
+                            <button onclick="showModal('${prompt.name}', \`${prompt.description.replace(/`/g, '\\`')}\`)" 
+                                    class="text-indigo-500 hover:text-indigo-600 text-sm font-medium mt-2 transition-colors">
+                                ดูรายละเอียด <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <button onclick="copyToClipboard(\`${prompt.description.replace(/`/g, '\\`')}\`)" 
+                                class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium">
+                            <i class="fas fa-copy mr-2"></i>คัดลอก
                         </button>
                     </div>
                 </div>
             `;
+
+            return card;
         }
 
-        // Escape HTML for safe insertion
-        function escapeHtml(text) {
-            if (!text) return '';
-            return text.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
-        }
-
-        // Format date to Thai Buddhist Era
-        function formatDate(dateString) {
-            if (!dateString) return '';
+        // Copy to clipboard
+        async function copyToClipboard(text) {
             try {
-                const date = new Date(dateString);
-                const thaiYear = date.getFullYear() + 543;
-                const day = date.getDate().toString().padStart(2, '0');
-                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                return `${day}/${month}/${thaiYear}`;
-            } catch (error) {
-                return dateString;
-            }
-        }
-
-        // Update pagination
-        function updatePagination() {
-            const startItem = (currentPage - 1) * pageSize + 1;
-            const endItem = Math.min(currentPage * pageSize, filteredPrompts.length);
-            
-            document.getElementById('paginationInfo').textContent = 
-                `แสดง ${startItem}-${endItem} จาก ${filteredPrompts.length} รายการ`;
-
-            // Update page buttons
-            document.getElementById('firstBtn').disabled = currentPage === 1;
-            document.getElementById('prevBtn').disabled = currentPage === 1;
-            document.getElementById('nextBtn').disabled = currentPage === totalPages;
-            document.getElementById('lastBtn').disabled = currentPage === totalPages;
-
-            // Generate page numbers
-            generatePageNumbers();
-        }
-
-        // Generate page numbers
-        function generatePageNumbers() {
-            const pageNumbers = document.getElementById('pageNumbers');
-            pageNumbers.innerHTML = '';
-
-            let startPage = Math.max(1, currentPage - 2);
-            let endPage = Math.min(totalPages, currentPage + 2);
-
-            if (endPage - startPage < 4) {
-                if (startPage === 1) {
-                    endPage = Math.min(totalPages, startPage + 4);
-                } else {
-                    startPage = Math.max(1, endPage - 4);
-                }
-            }
-
-            if (startPage > 1) {
-                pageNumbers.appendChild(createPageButton(1));
-                if (startPage > 2) {
-                    const ellipsis = document.createElement('span');
-                    ellipsis.textContent = '...';
-                    ellipsis.style.padding = '8px';
-                    pageNumbers.appendChild(ellipsis);
-                }
-            }
-
-            for (let i = startPage; i <= endPage; i++) {
-                pageNumbers.appendChild(createPageButton(i));
-            }
-
-            if (endPage < totalPages) {
-                if (endPage < totalPages - 1) {
-                    const ellipsis = document.createElement('span');
-                    ellipsis.textContent = '...';
-                    ellipsis.style.padding = '8px';
-                    pageNumbers.appendChild(ellipsis);
-                }
-                pageNumbers.appendChild(createPageButton(totalPages));
-            }
-        }
-
-        // Create page button
-        function createPageButton(pageNum) {
-            const button = document.createElement('button');
-            button.className = `page-btn ${pageNum === currentPage ? 'active' : ''}`;
-            button.textContent = pageNum;
-            button.onclick = () => goToPage(pageNum);
-            return button;
-        }
-
-        // Go to page
-        function goToPage(page) {
-            if (page >= 1 && page <= totalPages && page !== currentPage) {
-                currentPage = page;
-                displayPrompts();
-            }
-        }
-
-        // Change page size
-        function changePageSize() {
-            pageSize = parseInt(document.getElementById('pageSize').value);
-            currentPage = 1;
-            displayPrompts();
-        }
-
-        // Copy prompt to clipboard using index
-        async function copyPromptText(index) {
-            const prompt = filteredPrompts[index];
-            if (!prompt || !prompt[2]) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'ไม่มีข้อความ',
-                    text: 'ไม่มี prompt ให้คัดลอก',
-                    confirmButtonColor: '#667eea'
-                });
-                return;
-            }
-
-            const promptText = prompt[2];
-
-            try {
-                await navigator.clipboard.writeText(promptText);
-                Swal.fire({
-                    icon: 'success',
-                    title: 'คัดลอกสำเร็จ!',
-                    text: 'คัดลอก prompt เข้า clipboard แล้ว',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-            } catch (error) {
+                await navigator.clipboard.writeText(text);
+                showToast('คัดลอกสำเร็จ!');
+            } catch (err) {
                 // Fallback for older browsers
                 const textArea = document.createElement('textarea');
-                textArea.value = promptText;
+                textArea.value = text;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                
-                Swal.fire({
-                    icon: 'success',
-                    title: 'คัดลอกสำเร็จ!',
-                    text: 'คัดลอก prompt เข้า clipboard แล้ว',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
+                showToast('คัดลอกสำเร็จ!');
             }
         }
 
-        // Show image modal
-        function showImageModal(imageUrl, title) {
-            Swal.fire({
-                title: title,
-                imageUrl: imageUrl,
-                imageAlt: title,
-                showCloseButton: true,
-                showConfirmButton: false,
-                width: 'auto',
-                customClass: {
-                    image: 'swal-image-large'
-                }
-            });
-        }
-
-        // Open add modal
-        function openAddModal() {
-            isEditing = false;
-            document.getElementById('modalTitle').textContent = 'เพิ่ม Prompt ใหม่';
-            document.getElementById('promptForm').reset();
-            document.getElementById('editIndex').value = '';
-            document.getElementById('imagePreview').style.display = 'none';
-            document.getElementById('promptModal').style.display = 'block';
-        }
-
-        // Edit prompt
-        function editPrompt(index) {
-            const prompt = filteredPrompts[index];
-            if (!prompt) {
-                console.error('Prompt not found at index:', index);
-                return;
-            }
-
-            console.log('Editing prompt:', prompt);
-
-            isEditing = true;
-            document.getElementById('modalTitle').textContent = 'แก้ไข Prompt';
-            document.getElementById('editIndex').value = index;
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
             
-            document.getElementById('promptName').value = prompt[0] || '';
-            document.getElementById('promptCategory').value = prompt[1] || '';
-            document.getElementById('promptText').value = prompt[2] || '';
-            
-            const imagePreview = document.getElementById('imagePreview');
-            if (prompt[3]) {
-                imagePreview.src = prompt[3];
-                imagePreview.style.display = 'block';
+            // Update toast styling based on type
+            if (type === 'error') {
+                toast.className = 'toast fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                toastMessage.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
             } else {
-                imagePreview.style.display = 'none';
+                toast.className = 'toast fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                toastMessage.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
             }
             
-            document.getElementById('promptModal').style.display = 'block';
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
         }
 
-        // Delete prompt
-        function deletePrompt(index) {
-            const prompt = filteredPrompts[index];
-            if (!prompt) return;
-
-            Swal.fire({
-                title: 'ยืนยันการลบ',
-                text: `คุณต้องการลบ "${prompt[0]}" หรือไม่?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#e53e3e',
-                cancelButtonColor: '#718096',
-                confirmButtonText: 'ลบ',
-                cancelButtonText: 'ยกเลิก'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    try {
-                        // Find the original index in allPrompts array
-                        let originalIndex = -1;
-                        for (let i = 0; i < allPrompts.length; i++) {
-                            if (allPrompts[i][0] === prompt[0] && 
-                                allPrompts[i][1] === prompt[1] && 
-                                allPrompts[i][2] === prompt[2] &&
-                                allPrompts[i][3] === prompt[3]) {
-                                originalIndex = i;
-                                break;
-                            }
-                        }
-
-                        if (originalIndex === -1) {
-                            throw new Error('ไม่พบข้อมูลที่ต้องการลบ');
-                        }
-
-                        console.log('Deleting prompt at index:', originalIndex + 2);
-
-                        const response = await fetch(CONFIG.API_ENDPOINT, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                action: 'deletePrompt',
-                                sheetId: CONFIG.SHEET_ID,
-                                sheetName: CONFIG.SHEET_NAME,
-                                index: originalIndex + 2 // +2 for header row and 0-based index
-                            })
-                        });
-
-                        const responseText = await response.text();
-                        console.log('Delete response:', responseText);
-
-                        let data;
-                        try {
-                            data = JSON.parse(responseText);
-                        } catch (parseError) {
-                            console.error('Parse error:', parseError);
-                            throw new Error('ได้รับข้อมูลที่ไม่ถูกต้องจากเซิร์ฟเวอร์');
-                        }
-                        
-                        if (data.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'ลบสำเร็จ!',
-                                text: 'ลบ prompt เรียบร้อยแล้ว',
-                                timer: 1500,
-                                showConfirmButton: false
-                            });
-                            await loadPrompts();
-                        } else {
-                            throw new Error(data.error || 'ไม่สามารถลบข้อมูลได้');
-                        }
-                    } catch (error) {
-                        console.error('Error deleting prompt:', error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'เกิดข้อผิดพลาด',
-                            text: error.message || 'ไม่สามารถลบ prompt ได้ กรุณาลองใหม่อีกครั้ง',
-                            confirmButtonColor: '#667eea'
-                        });
-                    }
-                }
-            });
+        // Show modal
+        function showModal(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalContent').textContent = content;
+            currentModalContent = content;
+            document.getElementById('modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
         }
 
         // Close modal
         function closeModal() {
-            document.getElementById('promptModal').style.display = 'none';
+            document.getElementById('modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
         }
 
-        // Preview image
-        function previewImage() {
-            const file = document.getElementById('promptImage').files[0];
-            const preview = document.getElementById('imagePreview');
+        // Copy modal content
+        function copyModalContent() {
+            copyToClipboard(currentModalContent);
+            closeModal();
+        }
+
+        // Update pagination
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredPrompts.length / itemsPerPage);
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, filteredPrompts.length);
+
+            document.getElementById('showingStart').textContent = startItem;
+            document.getElementById('showingEnd').textContent = endItem;
+            document.getElementById('totalItems').textContent = filteredPrompts.length;
+            document.getElementById('totalPages').textContent = totalPages;
+            document.getElementById('jumpToPage').max = totalPages;
+
+            const paginationButtons = document.getElementById('paginationButtons');
+            paginationButtons.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            // First page button
+            if (currentPage > 3) {
+                const firstButton = document.createElement('button');
+                firstButton.className = 'px-2 py-1 text-sm rounded transition-colors bg-white border border-gray-300 text-gray-700 hover:bg-gray-50';
+                firstButton.textContent = '1';
+                firstButton.onclick = () => changePage(1);
+                paginationButtons.appendChild(firstButton);
+
+                if (currentPage > 4) {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-2 py-1 text-gray-400';
+                    dots.textContent = '...';
+                    paginationButtons.appendChild(dots);
+                }
+            }
+
+            // Previous button
+            const prevButton = document.createElement('button');
+            prevButton.className = `px-2 py-1 text-sm rounded transition-colors ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`;
+            prevButton.innerHTML = '<i class="fas fa-chevron-left text-xs"></i>';
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => changePage(currentPage - 1);
+            paginationButtons.appendChild(prevButton);
+
+            // Page numbers around current page
+            const maxVisiblePages = 3;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.className = `px-2 py-1 text-sm rounded transition-colors ${i === currentPage ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`;
+                pageButton.textContent = i;
+                pageButton.onclick = () => changePage(i);
+                paginationButtons.appendChild(pageButton);
+            }
+
+            // Next button
+            const nextButton = document.createElement('button');
+            nextButton.className = `px-2 py-1 text-sm rounded transition-colors ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`;
+            nextButton.innerHTML = '<i class="fas fa-chevron-right text-xs"></i>';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => changePage(currentPage + 1);
+            paginationButtons.appendChild(nextButton);
+
+            // Last page button
+            if (currentPage < totalPages - 2) {
+                if (currentPage < totalPages - 3) {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-2 py-1 text-gray-400';
+                    dots.textContent = '...';
+                    paginationButtons.appendChild(dots);
+                }
+
+                const lastButton = document.createElement('button');
+                lastButton.className = 'px-2 py-1 text-sm rounded transition-colors bg-white border border-gray-300 text-gray-700 hover:bg-gray-50';
+                lastButton.textContent = totalPages;
+                lastButton.onclick = () => changePage(totalPages);
+                paginationButtons.appendChild(lastButton);
+            }
+        }
+
+        // Handle jump to page
+        function handleJumpToPage(event) {
+            if (event.key === 'Enter') {
+                const page = parseInt(event.target.value);
+                const totalPages = Math.ceil(filteredPrompts.length / itemsPerPage);
+                if (page >= 1 && page <= totalPages) {
+                    changePage(page);
+                    event.target.value = '';
+                }
+            }
+        }
+
+        // Toggle add form
+        function toggleAddForm() {
+            const form = document.getElementById('addPromptForm');
+            const btn = document.getElementById('toggleFormBtn');
             
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
+            if (form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+                btn.innerHTML = '<i class="fas fa-minus mr-2"></i>ยกเลิก';
+                btn.className = 'bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors';
             } else {
-                preview.style.display = 'none';
+                form.classList.add('hidden');
+                btn.innerHTML = '<i class="fas fa-plus mr-2"></i>เพิ่ม Prompt';
+                btn.className = 'bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors';
+                resetForm();
             }
         }
 
-        // Handle form submit
-        async function handleFormSubmit(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('promptName').value.trim();
-            const category = document.getElementById('promptCategory').value.trim();
-            const promptText = document.getElementById('promptText').value.trim();
-            const imageFile = document.getElementById('promptImage').files[0];
-            const useLh3 = document.getElementById('useLh3').checked;
-            
-            if (!name || !category || !promptText) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'กรุณากรอกข้อมูลให้ครบ',
-                    text: 'ชื่อ, ประเภท และ prompt เป็นข้อมูลที่จำเป็น',
-                    confirmButtonColor: '#667eea'
-                });
-                return;
-            }
+        // Cancel add form
+        function cancelAddForm() {
+            toggleAddForm();
+        }
 
-            let loadingSwal;
+        // Reset form
+        function resetForm() {
+            document.getElementById('promptName').value = '';
+            document.getElementById('promptType').value = '';
+            document.getElementById('promptImageURL').value = '';
+            document.getElementById('promptDescription').value = '';
+        }
+
+        // Add new prompt
+        async function addPrompt(event) {
+            event.preventDefault();
             
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังบันทึก...';
+            submitBtn.disabled = true;
+
+            const formData = {
+                action: 'add',
+                name: document.getElementById('promptName').value.trim(),
+                description: document.getElementById('promptDescription').value.trim(),
+                imageURL: document.getElementById('promptImageURL').value.trim(),
+                type: document.getElementById('promptType').value,
+                date: new Date().toLocaleDateString('th-TH')
+            };
+
             try {
-                // Show loading
-                loadingSwal = Swal.fire({
-                    title: 'กำลังบันทึก...',
-                    html: 'กรุณารอสักครู่...',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    showConfirmButton: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
                 });
 
-                let imageUrl = '';
+                const result = await response.json();
                 
-                // Upload image if provided
-                if (imageFile) {
-                    try {
-                        console.log('Uploading image...');
-                        const formData = new FormData();
-                        formData.append('file', imageFile);
-                        formData.append('folderId', CONFIG.FOLDER_ID);
-                        formData.append('useLh3', useLh3.toString());
-                        
-                        const uploadResponse = await fetch(CONFIG.API_ENDPOINT, {
-                            method: 'POST',
-                            body: formData
-                        });
-                        
-                        if (uploadResponse.ok) {
-                            const uploadData = await uploadResponse.json();
-                            if (uploadData.success) {
-                                imageUrl = uploadData.imageUrl;
-                                console.log('Image uploaded successfully:', imageUrl);
-                            } else {
-                                console.warn('Image upload failed:', uploadData.error);
-                            }
-                        }
-                    } catch (uploadError) {
-                        console.warn('Image upload error:', uploadError);
-                        // Continue without image
-                    }
-                } else if (isEditing) {
-                    // Keep existing image URL if editing and no new image
-                    const editIndex = parseInt(document.getElementById('editIndex').value);
-                    const existingPrompt = filteredPrompts[editIndex];
-                    imageUrl = existingPrompt[3] || '';
-                }
-
-                // Create current date in Thai format
-                const now = new Date();
-                const thaiYear = now.getFullYear() + 543;
-                const createDate = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth() + 1).toString().padStart(2, '0')}/${thaiYear}`;
-
-                // Prepare request data
-                const requestData = {
-                    sheetId: CONFIG.SHEET_ID,
-                    sheetName: CONFIG.SHEET_NAME,
-                    name: name,
-                    category: category,
-                    prompt: promptText,
-                    imageUrl: imageUrl,
-                    createDate: createDate
-                };
-
-                let response;
-
-                if (isEditing) {
-                    const editIndex = parseInt(document.getElementById('editIndex').value);
-                    const originalPrompt = filteredPrompts[editIndex];
-                    
-                    // Find the original index in allPrompts array more accurately
-                    let originalIndex = -1;
-                    for (let i = 0; i < allPrompts.length; i++) {
-                        if (allPrompts[i][0] === originalPrompt[0] && 
-                            allPrompts[i][1] === originalPrompt[1] && 
-                            allPrompts[i][2] === originalPrompt[2] &&
-                            allPrompts[i][3] === originalPrompt[3]) {
-                            originalIndex = i;
-                            break;
-                        }
-                    }
-
-                    if (originalIndex === -1) {
-                        throw new Error('ไม่พบข้อมูลที่ต้องการแก้ไข');
-                    }
-                    
-                    requestData.action = 'updatePrompt';
-                    requestData.index = originalIndex + 2; // +2 for header row and 0-based index
-                    
-                    console.log('Updating prompt at index:', originalIndex + 2, 'with data:', requestData);
-                    
-                    response = await fetch(CONFIG.API_ENDPOINT, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(requestData)
-                    });
+                if (result.success) {
+                    showToast('เพิ่ม Prompt สำเร็จ!');
+                    resetForm();
+                    toggleAddForm();
+                    await loadData(); // Reload data
                 } else {
-                    requestData.action = 'addPrompt';
-                    
-                    console.log('Adding new prompt with data:', requestData);
-                    
-                    response = await fetch(CONFIG.API_ENDPOINT, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(requestData)
-                    });
+                    throw new Error(result.message || 'เกิดข้อผิดพลาดในการเพิ่มข้อมูล');
                 }
-
-                console.log('Request data:', requestData);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const responseText = await response.text();
-                console.log('Response:', responseText);
-                
-                let data;
-                try {
-                    data = JSON.parse(responseText);
-                } catch (parseError) {
-                    console.error('Parse error:', parseError);
-                    console.error('Response text:', responseText);
-                    throw new Error('ได้รับข้อมูลที่ไม่ถูกต้องจากเซิร์ฟเวอร์');
-                }
-                
-                if (!data.success) {
-                    throw new Error(data.error || 'ไม่สามารถบันทึกข้อมูลได้');
-                }
-
-                // Close loading dialog
-                if (loadingSwal) {
-                    Swal.close();
-                }
-
-                // Show success message
-                Swal.fire({
-                    icon: 'success',
-                    title: isEditing ? 'แก้ไขสำเร็จ!' : 'เพิ่มสำเร็จ!',
-                    text: isEditing ? 'แก้ไข prompt เรียบร้อยแล้ว' : 'เพิ่ม prompt ใหม่เรียบร้อยแล้ว',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-
-                closeModal();
-                await loadPrompts();
-
             } catch (error) {
-                console.error('Error saving prompt:', error);
-                
-                // Close loading dialog
-                if (loadingSwal) {
-                    Swal.close();
-                }
-
-                // Show error message
-                Swal.fire({
-                    icon: 'error',
-                    title: 'เกิดข้อผิดพลาด',
-                    text: error.message || 'ไม่สามารถบันทึก prompt ได้ กรุณาลองใหม่อีกครั้ง',
-                    confirmButtonColor: '#667eea',
-                    footer: 'หากปัญหายังคงอยู่ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต'
-                });
+                console.error('Error adding prompt:', error);
+                showToast('เกิดข้อผิดพลาดในการเพิ่มข้อมูล', 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             }
         }
+
+        // Change page
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredPrompts.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                displayPrompts();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Change items per page
+        function changeItemsPerPage() {
+            itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
+            currentPage = 1;
+            displayPrompts();
+        }
+
+        // Filter by type
+        function filterByType() {
+            const selectedType = document.getElementById('typeFilter').value;
+            if (selectedType === '') {
+                filteredPrompts = [...allPrompts];
+            } else {
+                filteredPrompts = allPrompts.filter(prompt => prompt.type === selectedType);
+            }
+            currentPage = 1;
+            displayPrompts();
+        }
+
+        // Refresh data
+        function refreshData() {
+            currentPage = 1;
+            document.getElementById('typeFilter').value = '';
+            loadData();
+        }
+
+        // Show loading state
+        function showLoading() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+            document.getElementById('cardsContainer').classList.add('hidden');
+            document.getElementById('paginationContainer').classList.add('hidden');
+        }
+
+        // Hide loading state
+        function hideLoading() {
+            document.getElementById('loadingState').classList.add('hidden');
+        }
+
+        // Show error state
+        function showError() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+            document.getElementById('cardsContainer').classList.add('hidden');
+            document.getElementById('paginationContainer').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !document.getElementById('modal').classList.contains('hidden')) {
+                closeModal();
+            }
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97e19614c60b5fe4',t:'MTc1NzcwMjk4Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97ee7a6767130548',t:'MTc1NzgzODE2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
