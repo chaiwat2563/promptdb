@@ -11,6 +11,21 @@
         body { font-family: 'Kanit', sans-serif; }
         .card-hover { transition: all 0.3s ease; }
         .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        
+        /* Mobile touch improvements */
+        @media (max-width: 640px) {
+            .card-hover:active { transform: translateY(-2px); }
+            button:active { transform: scale(0.98); }
+        }
+        
+        /* Better mobile scrolling */
+        .scroll-description { -webkit-overflow-scrolling: touch; }
+        
+        /* Mobile-friendly tap targets */
+        @media (max-width: 640px) {
+            button { min-height: 44px; }
+            input, select, textarea { min-height: 44px; }
+        }
         .scroll-description { max-height: 120px; overflow-y: auto; }
         .scroll-description::-webkit-scrollbar { width: 4px; }
         .scroll-description::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 2px; }
@@ -27,20 +42,20 @@
 <body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
     <!-- Header -->
     <header class="bg-white shadow-lg border-b-4 border-indigo-500">
-        <div class="container mx-auto px-6 py-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="bg-indigo-500 p-3 rounded-xl">
-                        <i class="fas fa-image text-white text-2xl"></i>
+        <div class="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+                <div class="flex items-center space-x-3 sm:space-x-4">
+                    <div class="bg-indigo-500 p-2 sm:p-3 rounded-xl">
+                        <i class="fas fa-image text-white text-xl sm:text-2xl"></i>
                     </div>
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-800">ระบบจัดเก็บ Prompt</h1>
-                        <p class="text-gray-600">สำหรับสร้างรูปภาพและวีดิโอ</p>
+                        <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">ระบบจัดเก็บ Prompt</h1>
+                        <p class="text-sm sm:text-base text-gray-600">สำหรับสร้างรูปภาพและวีดิโอ</p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <button onclick="refreshData()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-sync-alt mr-2"></i>รีเฟรช
+                <div class="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
+                    <button onclick="refreshData()" class="flex-1 sm:flex-none bg-indigo-500 hover:bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base">
+                        <i class="fas fa-sync-alt mr-1 sm:mr-2"></i>รีเฟรช
                     </button>
                 </div>
             </div>
@@ -48,28 +63,28 @@
     </header>
 
     <!-- Main Content -->
-    <main class="container mx-auto px-6 py-8">
+    <main class="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
         <!-- Add Prompt Form -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-semibold text-gray-800">
+        <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0 mb-4 sm:mb-6">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-800">
                     <i class="fas fa-plus-circle text-indigo-500 mr-2"></i>เพิ่ม Prompt ใหม่
                 </h2>
-                <button id="toggleFormBtn" onclick="toggleAddForm()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors">
+                <button id="toggleFormBtn" onclick="toggleAddForm()" class="w-full sm:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors text-sm sm:text-base">
                     <i class="fas fa-plus mr-2"></i>เพิ่ม Prompt
                 </button>
             </div>
             
             <div id="addPromptForm" class="hidden">
                 <form onsubmit="addPrompt(event)" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-gray-700 font-medium mb-2">ชื่อ Prompt *</label>
-                            <input type="text" id="promptName" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="ใส่ชื่อ prompt">
+                            <label class="block text-gray-700 font-medium mb-2 text-sm sm:text-base">ชื่อ Prompt *</label>
+                            <input type="text" id="promptName" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base" placeholder="ใส่ชื่อ prompt">
                         </div>
                         <div>
-                            <label class="block text-gray-700 font-medium mb-2">ประเภท *</label>
-                            <select id="promptType" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <label class="block text-gray-700 font-medium mb-2 text-sm sm:text-base">ประเภท *</label>
+                            <select id="promptType" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
                                 <option value="">เลือกประเภท</option>
                                 <option value="image">รูปภาพ</option>
                                 <option value="video">วีดิโอ</option>
@@ -77,14 +92,14 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-gray-700 font-medium mb-2">รูปภาพ (ไม่บังคับ)</label>
+                        <label class="block text-gray-700 font-medium mb-2 text-sm sm:text-base">รูปภาพ (ไม่บังคับ)</label>
                         <div class="space-y-3">
-                            <div class="flex items-center space-x-4">
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                                 <input type="file" id="promptImageFile" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
-                                <button type="button" onclick="document.getElementById('promptImageFile').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                                <button type="button" onclick="document.getElementById('promptImageFile').click()" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">
                                     <i class="fas fa-upload mr-2"></i>เลือกไฟล์รูปภาพ
                                 </button>
-                                <span id="fileName" class="text-sm text-gray-600"></span>
+                                <span id="fileName" class="text-xs sm:text-sm text-gray-600 break-all"></span>
                             </div>
                             <div class="text-xs text-gray-500">
                                 หรือใส่ URL รูปภาพ (รองรับ Google Drive):
@@ -127,14 +142,14 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-gray-700 font-medium mb-2">คำอธิบาย Prompt *</label>
-                        <textarea id="promptDescription" required rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none" placeholder="ใส่คำอธิบาย prompt ที่ละเอียด..."></textarea>
+                        <label class="block text-gray-700 font-medium mb-2 text-sm sm:text-base">คำอธิบาย Prompt *</label>
+                        <textarea id="promptDescription" required rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-sm sm:text-base" placeholder="ใส่คำอธิบาย prompt ที่ละเอียด..."></textarea>
                     </div>
-                    <div class="flex space-x-4">
-                        <button type="submit" id="submitBtn" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors">
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                        <button type="submit" id="submitBtn" class="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors text-sm sm:text-base">
                             <i class="fas fa-save mr-2"></i>บันทึก
                         </button>
-                        <button type="button" onclick="cancelAddForm()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors">
+                        <button type="button" onclick="cancelAddForm()" class="flex-1 sm:flex-none bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors text-sm sm:text-base">
                             <i class="fas fa-times mr-2"></i>ยกเลิก
                         </button>
                     </div>
@@ -143,19 +158,19 @@
         </div>
 
         <!-- Controls -->
-        <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-            <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-                <div class="flex items-center space-x-4">
-                    <label class="text-gray-700 font-medium">แสดงต่อหน้า:</label>
-                    <select id="itemsPerPage" onchange="changeItemsPerPage()" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+        <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                    <label class="text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">แสดงต่อหน้า:</label>
+                    <select id="itemsPerPage" onchange="changeItemsPerPage()" class="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
                         <option value="10">10 รายการ</option>
                         <option value="20">20 รายการ</option>
                         <option value="50">50 รายการ</option>
                     </select>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <label class="text-gray-700 font-medium">ประเภท:</label>
-                    <select id="typeFilter" onchange="filterByType()" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                    <label class="text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">ประเภท:</label>
+                    <select id="typeFilter" onchange="filterByType()" class="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
                         <option value="">ทั้งหมด</option>
                         <option value="image">รูปภาพ</option>
                         <option value="video">วีดิโอ</option>
@@ -181,25 +196,25 @@
         </div>
 
         <!-- Cards Grid -->
-        <div id="cardsContainer" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div id="cardsContainer" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <!-- Cards will be inserted here -->
         </div>
 
         <!-- Pagination -->
-        <div id="paginationContainer" class="hidden bg-white rounded-xl shadow-lg p-6">
+        <div id="paginationContainer" class="hidden bg-white rounded-xl shadow-lg p-4 sm:p-6">
             <div class="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
-                <div class="text-gray-600 text-sm">
+                <div class="text-gray-600 text-xs sm:text-sm text-center lg:text-left">
                     แสดง <span id="showingStart">1</span>-<span id="showingEnd">10</span> จาก <span id="totalItems">0</span> รายการ
                 </div>
-                <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full lg:w-auto">
                     <!-- Jump to page -->
-                    <div class="flex items-center space-x-2">
-                        <span class="text-sm text-gray-600">ไปหน้า:</span>
-                        <input type="number" id="jumpToPage" min="1" class="w-16 px-2 py-1 border border-gray-300 rounded text-center text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" onkeypress="handleJumpToPage(event)">
-                        <span class="text-sm text-gray-600">จาก <span id="totalPages">1</span></span>
+                    <div class="flex items-center space-x-2 text-xs sm:text-sm">
+                        <span class="text-gray-600 whitespace-nowrap">ไปหน้า:</span>
+                        <input type="number" id="jumpToPage" min="1" class="w-12 sm:w-16 px-1 sm:px-2 py-1 border border-gray-300 rounded text-center text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" onkeypress="handleJumpToPage(event)">
+                        <span class="text-gray-600 whitespace-nowrap">จาก <span id="totalPages">1</span></span>
                     </div>
                     <!-- Pagination buttons -->
-                    <div class="flex items-center space-x-1" id="paginationButtons">
+                    <div class="flex items-center space-x-1 overflow-x-auto pb-1" id="paginationButtons">
                         <!-- Pagination buttons will be inserted here -->
                     </div>
                 </div>
@@ -217,20 +232,20 @@
 
     <!-- Modal for Full Description -->
     <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
-            <div class="p-6 border-b border-gray-200">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-hidden">
+            <div class="p-4 sm:p-6 border-b border-gray-200">
                 <div class="flex justify-between items-center">
-                    <h3 class="text-xl font-semibold text-gray-800" id="modalTitle">รายละเอียด Prompt</h3>
-                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-800 pr-4" id="modalTitle">รายละเอียด Prompt</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl flex-shrink-0">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
             </div>
-            <div class="p-6 overflow-y-auto max-h-[60vh]">
-                <div id="modalContent" class="text-gray-700 leading-relaxed whitespace-pre-wrap"></div>
+            <div class="p-4 sm:p-6 overflow-y-auto max-h-[50vh] sm:max-h-[60vh]">
+                <div id="modalContent" class="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm sm:text-base"></div>
             </div>
-            <div class="p-6 border-t border-gray-200">
-                <button onclick="copyModalContent()" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors">
+            <div class="p-4 sm:p-6 border-t border-gray-200">
+                <button onclick="copyModalContent()" class="w-full sm:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors text-sm sm:text-base">
                     <i class="fas fa-copy mr-2"></i>คัดลอก
                 </button>
             </div>
@@ -316,18 +331,18 @@
             const typeColor = prompt.type === 'video' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600';
 
             card.innerHTML = `
-                <div class="p-6">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="flex items-center space-x-3">
-                            <div class="${typeColor} p-2 rounded-lg">
-                                <i class="fas ${typeIcon}"></i>
+                <div class="p-4 sm:p-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start mb-4 space-y-2 sm:space-y-0">
+                        <div class="flex items-center space-x-3 flex-1 min-w-0">
+                            <div class="${typeColor} p-2 rounded-lg flex-shrink-0">
+                                <i class="fas ${typeIcon} text-sm sm:text-base"></i>
                             </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-800 text-lg">${prompt.name}</h3>
-                                <p class="text-sm text-gray-500">${prompt.date}</p>
+                            <div class="min-w-0 flex-1">
+                                <h3 class="font-semibold text-gray-800 text-base sm:text-lg truncate">${prompt.name}</h3>
+                                <p class="text-xs sm:text-sm text-gray-500">${prompt.date}</p>
                             </div>
                         </div>
-                        <span class="${typeColor} px-3 py-1 rounded-full text-xs font-medium">
+                        <span class="${typeColor} px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0">
                             ${prompt.type === 'video' ? 'วีดิโอ' : 'รูปภาพ'}
                         </span>
                     </div>
@@ -335,21 +350,21 @@
                     ${prompt.imageURL ? `
                         <div class="mb-4">
                             <img src="${prompt.imageURL}" alt="${prompt.name}" 
-                                 class="w-full h-32 object-cover rounded-lg"
+                                 class="w-full h-32 sm:h-40 object-cover rounded-lg"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                            <div class="hidden w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-image text-gray-400 text-2xl"></i>
+                            <div class="hidden w-full h-32 sm:h-40 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-image text-gray-400 text-xl sm:text-2xl"></i>
                             </div>
                         </div>
                     ` : ''}
                     
                     <div class="mb-4">
-                        <div class="scroll-description text-gray-700 text-sm leading-relaxed">
+                        <div class="scroll-description text-gray-700 text-xs sm:text-sm leading-relaxed">
                             ${truncatedDescription}
                         </div>
                         ${prompt.description.length > 150 ? `
                             <button onclick="showModal('${prompt.name.replace(/'/g, "\\'")}', '${prompt.description.replace(/'/g, "\\'")}'); return false;" 
-                                    class="text-indigo-500 hover:text-indigo-600 text-sm font-medium mt-2 transition-colors">
+                                    class="text-indigo-500 hover:text-indigo-600 text-xs sm:text-sm font-medium mt-2 transition-colors">
                                 ดูรายละเอียด <i class="fas fa-arrow-right ml-1"></i>
                             </button>
                         ` : ''}
@@ -357,8 +372,8 @@
                     
                     <div class="flex space-x-2">
                         <button onclick="copyToClipboard('${prompt.description.replace(/'/g, "\\'")}'); return false;" 
-                                class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium">
-                            <i class="fas fa-copy mr-2"></i>คัดลอก
+                                class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium">
+                            <i class="fas fa-copy mr-1 sm:mr-2"></i>คัดลอก
                         </button>
                     </div>
                 </div>
@@ -370,38 +385,100 @@
         // Copy to clipboard
         async function copyToClipboard(text) {
             try {
+                // Method 1: Modern Clipboard API (works in secure contexts)
                 if (navigator.clipboard && window.isSecureContext) {
                     await navigator.clipboard.writeText(text);
                     showToast('คัดลอกสำเร็จ!');
-                } else {
-                    // Fallback for older browsers or non-secure contexts
-                    const textArea = document.createElement('textarea');
-                    textArea.value = text;
-                    textArea.style.position = 'fixed';
-                    textArea.style.left = '-999999px';
-                    textArea.style.top = '-999999px';
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-                    
-                    try {
-                        const successful = document.execCommand('copy');
-                        if (successful) {
-                            showToast('คัดลอกสำเร็จ!');
-                        } else {
-                            throw new Error('Copy command failed');
-                        }
-                    } catch (err) {
-                        console.error('Fallback copy failed:', err);
-                        showToast('ไม่สามารถคัดลอกได้ กรุณาคัดลอกด้วยตนเอง', 'error');
-                    } finally {
-                        document.body.removeChild(textArea);
-                    }
+                    return;
                 }
+                
+                // Method 2: Fallback using textarea and execCommand
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'absolute';
+                textArea.style.left = '-9999px';
+                textArea.style.top = '-9999px';
+                textArea.style.opacity = '0';
+                textArea.style.pointerEvents = 'none';
+                textArea.setAttribute('readonly', '');
+                textArea.setAttribute('tabindex', '-1');
+                
+                document.body.appendChild(textArea);
+                
+                // For mobile devices
+                if (navigator.userAgent.match(/ipad|ipod|iphone/i)) {
+                    textArea.contentEditable = true;
+                    textArea.readOnly = false;
+                    const range = document.createRange();
+                    range.selectNodeContents(textArea);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    textArea.setSelectionRange(0, 999999);
+                } else {
+                    textArea.select();
+                    textArea.setSelectionRange(0, 99999);
+                }
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showToast('คัดลอกสำเร็จ!');
+                    } else {
+                        throw new Error('execCommand failed');
+                    }
+                } catch (execErr) {
+                    console.error('execCommand failed:', execErr);
+                    // Method 3: Show text in modal for manual copy
+                    showCopyModal(text);
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+                
             } catch (err) {
-                console.error('Copy to clipboard failed:', err);
-                showToast('ไม่สามารถคัดลอกได้ กรุณาคัดลอกด้วยตนเอง', 'error');
+                console.error('All copy methods failed:', err);
+                // Final fallback: Show text in modal
+                showCopyModal(text);
             }
+        }
+
+        // Show copy modal as final fallback
+        function showCopyModal(text) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl max-w-md w-full p-6">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-copy text-indigo-500 text-3xl mb-2"></i>
+                        <h3 class="text-lg font-semibold text-gray-800">คัดลอกข้อความ</h3>
+                        <p class="text-sm text-gray-600 mt-2">กรุณาเลือกข้อความด้านล่างและกด Ctrl+C (หรือ Cmd+C บน Mac)</p>
+                    </div>
+                    <textarea readonly class="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm resize-none" onclick="this.select()">${text}</textarea>
+                    <div class="flex space-x-3 mt-4">
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            ปิด
+                        </button>
+                        <button onclick="document.querySelector('textarea').select(); this.parentElement.parentElement.parentElement.remove();" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            เลือกข้อความ
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Auto-select text
+            setTimeout(() => {
+                const textarea = modal.querySelector('textarea');
+                textarea.focus();
+                textarea.select();
+            }, 100);
+            
+            // Close on outside click
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
         }
 
         // Show toast notification
@@ -914,5 +991,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97eeb5cc229aef6d',t:'MTc1Nzg0MDU5Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97eeda1935d0f8fe',t:'MTc1Nzg0MjA4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
