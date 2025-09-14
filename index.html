@@ -26,11 +26,37 @@
             button { min-height: 44px; }
             input, select, textarea { min-height: 44px; }
         }
-        .scroll-description { max-height: 120px; overflow-y: auto; }
-        .scroll-description::-webkit-scrollbar { width: 4px; }
-        .scroll-description::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 2px; }
-        .scroll-description::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 2px; }
-        .scroll-description::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+        .scroll-description { 
+            max-height: 120px; 
+            overflow-y: auto; 
+            padding-right: 8px;
+            margin-right: -8px;
+        }
+        .scroll-description::-webkit-scrollbar { 
+            width: 6px; 
+        }
+        .scroll-description::-webkit-scrollbar-track { 
+            background: #f8f9fa; 
+            border-radius: 3px; 
+            margin: 2px 0;
+        }
+        .scroll-description::-webkit-scrollbar-thumb { 
+            background: #cbd5e0; 
+            border-radius: 3px; 
+            border: 1px solid #e2e8f0;
+        }
+        .scroll-description::-webkit-scrollbar-thumb:hover { 
+            background: #a0aec0; 
+        }
+        .scroll-description::-webkit-scrollbar-thumb:active { 
+            background: #718096; 
+        }
+        
+        /* Firefox scrollbar styling */
+        .scroll-description {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 #f8f9fa;
+        }
         .toast { transform: translateX(100%); transition: transform 0.3s ease; }
         .toast.show { transform: translateX(0); }
         .loading-spinner { animation: spin 1s linear infinite; }
@@ -377,7 +403,7 @@
                         <div class="mb-4">
                             <img src="${prompt.imageURL}" alt="${prompt.name}" 
                                  class="w-full h-32 sm:h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                 onclick="showImageModal('${prompt.imageURL}', '${prompt.name.replace(/'/g, "\\'")}'); return false;"
+                                 onclick="showImageModal(\`${prompt.imageURL}\`, \`${prompt.name.replace(/`/g, '\\`')}\`); return false;"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                             <div class="hidden w-full h-32 sm:h-40 bg-gray-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-image text-gray-400 text-xl sm:text-2xl"></i>
@@ -390,15 +416,15 @@
                             ${truncatedDescription}
                         </div>
                         ${prompt.description.length > 150 ? `
-                            <button onclick="showModal('${prompt.name.replace(/'/g, "\\'")}', '${prompt.description.replace(/'/g, "\\'")}'); return false;" 
-                                    class="text-indigo-500 hover:text-indigo-600 text-xs sm:text-sm font-medium mt-2 transition-colors">
+                            <button onclick="showModal(\`${prompt.name.replace(/`/g, '\\`')}\`, \`${prompt.description.replace(/`/g, '\\`')}\`); return false;" 
+                                    class="text-indigo-500 hover:text-indigo-600 text-xs sm:text-sm font-medium mt-2 transition-colors block">
                                 ดูรายละเอียด <i class="fas fa-arrow-right ml-1"></i>
                             </button>
                         ` : ''}
                     </div>
                     
                     <div class="flex space-x-2">
-                        <button onclick="copyToClipboard('${prompt.description.replace(/'/g, "\\'")}'); return false;" 
+                        <button onclick="copyToClipboard(\`${prompt.description.replace(/`/g, '\\`')}\`); return false;" 
                                 class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium">
                             <i class="fas fa-copy mr-1 sm:mr-2"></i>คัดลอก
                         </button>
@@ -1051,5 +1077,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97efa19224120dbe',t:'MTc1Nzg1MDI1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97f0702205f4f309',t:'MTc1Nzg1ODcxNC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
