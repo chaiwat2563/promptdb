@@ -252,6 +252,26 @@
         </div>
     </div>
 
+    <!-- Image Modal -->
+    <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <div class="relative max-w-[90vw] max-h-[90vh] flex flex-col">
+            <!-- Close button -->
+            <button onclick="closeImageModal()" class="absolute -top-12 right-0 text-white hover:text-gray-300 text-2xl z-10 bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <!-- Image container -->
+            <div class="flex items-center justify-center max-h-[90vh] overflow-hidden">
+                <img id="modalImage" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" alt="รูปภาพขนาดใหญ่">
+            </div>
+            
+            <!-- Image info -->
+            <div class="bg-black bg-opacity-50 text-white p-3 rounded-b-lg mt-2">
+                <p id="imageModalTitle" class="font-medium text-center"></p>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Global variables
         let allPrompts = [];
@@ -356,7 +376,8 @@
                     ${prompt.imageURL ? `
                         <div class="mb-4">
                             <img src="${prompt.imageURL}" alt="${prompt.name}" 
-                                 class="w-full h-32 sm:h-40 object-cover rounded-lg"
+                                 class="w-full h-32 sm:h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                 onclick="showImageModal('${prompt.imageURL}', '${prompt.name.replace(/'/g, "\\'")}'); return false;"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                             <div class="hidden w-full h-32 sm:h-40 bg-gray-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-image text-gray-400 text-xl sm:text-2xl"></i>
@@ -997,12 +1018,38 @@
             }
         });
 
+        // Show image modal
+        function showImageModal(imageURL, title) {
+            document.getElementById('modalImage').src = imageURL;
+            document.getElementById('imageModalTitle').textContent = title;
+            document.getElementById('imageModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close image modal
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
         // Close modal with Escape key
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && !document.getElementById('modal').classList.contains('hidden')) {
-                closeModal();
+            if (e.key === 'Escape') {
+                if (!document.getElementById('modal').classList.contains('hidden')) {
+                    closeModal();
+                }
+                if (!document.getElementById('imageModal').classList.contains('hidden')) {
+                    closeImageModal();
+                }
+            }
+        });
+
+        // Close image modal when clicking outside
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97ef79bb81be98b3',t:'MTc1Nzg0ODYyMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97ef958c91de40af',t:'MTc1Nzg0OTc2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
