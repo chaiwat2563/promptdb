@@ -77,8 +77,54 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-gray-700 font-medium mb-2">URL รูปภาพ (ไม่บังคับ)</label>
-                        <input type="url" id="promptImageURL" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="https://example.com/image.jpg">
+                        <label class="block text-gray-700 font-medium mb-2">รูปภาพ (ไม่บังคับ)</label>
+                        <div class="space-y-3">
+                            <div class="flex items-center space-x-4">
+                                <input type="file" id="promptImageFile" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+                                <button type="button" onclick="document.getElementById('promptImageFile').click()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                                    <i class="fas fa-upload mr-2"></i>เลือกไฟล์รูปภาพ
+                                </button>
+                                <span id="fileName" class="text-sm text-gray-600"></span>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                หรือใส่ URL รูปภาพ (รองรับ Google Drive):
+                            </div>
+                            <input type="url" id="promptImageURL" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" placeholder="https://drive.google.com/file/d/... หรือ https://example.com/image.jpg" onblur="validateImageURL()">
+                            
+                            <!-- Google Drive Link Options -->
+                            <div id="googleDriveOptions" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <div class="flex items-center space-x-4 mb-2">
+                                    <span class="text-sm font-medium text-blue-800">ตัวเลือกลิงค์ Google Drive:</span>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="driveFormat" value="lh3" checked class="mr-2 text-blue-600">
+                                        <span class="text-sm text-blue-700">lh3 (แนะนำ)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="driveFormat" value="lh5" class="mr-2 text-blue-600">
+                                        <span class="text-sm text-blue-700">lh5</span>
+                                    </label>
+                                </div>
+                                <div class="mt-2">
+                                    <button type="button" onclick="convertGoogleDriveURL()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">
+                                        <i class="fas fa-sync mr-1"></i>แปลงลิงค์
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="imagePreview" class="hidden">
+                                <img id="previewImg" class="w-32 h-32 object-cover rounded-lg border" alt="Preview">
+                                <button type="button" onclick="clearImagePreview()" class="mt-2 text-red-500 hover:text-red-600 text-sm">
+                                    <i class="fas fa-times mr-1"></i>ลบรูปภาพ
+                                </button>
+                            </div>
+                            
+                            <!-- URL Status -->
+                            <div id="urlStatus" class="hidden text-xs">
+                                <span id="urlStatusText"></span>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-gray-700 font-medium mb-2">คำอธิบาย Prompt *</label>
@@ -198,8 +244,10 @@
         let currentPage = 1;
         let itemsPerPage = 10;
         let currentModalContent = '';
+        let selectedFile = null;
+        let uploadedImageURL = '';
 
-        // API Configuration
+        // API Configuration - Updated with your Google Apps Script Web App URL
         const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxFUrQiPtN9wKorD-_P2ICdo7_zlmDrL2V5U1rXMc0dVP6H75-6Gmh6FChKUm0kcIMo8g/exec';
 
         // Initialize the application
@@ -300,7 +348,7 @@
                             ${truncatedDescription}
                         </div>
                         ${prompt.description.length > 150 ? `
-                            <button onclick="showModal('${prompt.name}', \`${prompt.description.replace(/`/g, '\\`')}\`)" 
+                            <button onclick="showModal('${prompt.name.replace(/'/g, "\\'")}', '${prompt.description.replace(/'/g, "\\'")}'); return false;" 
                                     class="text-indigo-500 hover:text-indigo-600 text-sm font-medium mt-2 transition-colors">
                                 ดูรายละเอียด <i class="fas fa-arrow-right ml-1"></i>
                             </button>
@@ -308,7 +356,7 @@
                     </div>
                     
                     <div class="flex space-x-2">
-                        <button onclick="copyToClipboard(\`${prompt.description.replace(/`/g, '\\`')}\`)" 
+                        <button onclick="copyToClipboard('${prompt.description.replace(/'/g, "\\'")}'); return false;" 
                                 class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium">
                             <i class="fas fa-copy mr-2"></i>คัดลอก
                         </button>
@@ -322,17 +370,37 @@
         // Copy to clipboard
         async function copyToClipboard(text) {
             try {
-                await navigator.clipboard.writeText(text);
-                showToast('คัดลอกสำเร็จ!');
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    showToast('คัดลอกสำเร็จ!');
+                } else {
+                    // Fallback for older browsers or non-secure contexts
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    
+                    try {
+                        const successful = document.execCommand('copy');
+                        if (successful) {
+                            showToast('คัดลอกสำเร็จ!');
+                        } else {
+                            throw new Error('Copy command failed');
+                        }
+                    } catch (err) {
+                        console.error('Fallback copy failed:', err);
+                        showToast('ไม่สามารถคัดลอกได้ กรุณาคัดลอกด้วยตนเอง', 'error');
+                    } finally {
+                        document.body.removeChild(textArea);
+                    }
+                }
             } catch (err) {
-                // Fallback for older browsers
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showToast('คัดลอกสำเร็จ!');
+                console.error('Copy to clipboard failed:', err);
+                showToast('ไม่สามารถคัดลอกได้ กรุณาคัดลอกด้วยตนเอง', 'error');
             }
         }
 
@@ -500,6 +568,216 @@
             document.getElementById('promptType').value = '';
             document.getElementById('promptImageURL').value = '';
             document.getElementById('promptDescription').value = '';
+            document.getElementById('promptImageFile').value = '';
+            document.getElementById('fileName').textContent = '';
+            selectedFile = null;
+            uploadedImageURL = '';
+            clearImagePreview();
+            
+            // Hide Google Drive options and status
+            document.getElementById('googleDriveOptions').classList.add('hidden');
+            document.getElementById('urlStatus').classList.add('hidden');
+            
+            // Reset radio button to default (lh3)
+            document.querySelector('input[name="driveFormat"][value="lh3"]').checked = true;
+        }
+
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น', 'error');
+                    return;
+                }
+
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('ขนาดไฟล์ต้องไม่เกิน 5MB', 'error');
+                    return;
+                }
+
+                selectedFile = file;
+                document.getElementById('fileName').textContent = file.name;
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+
+                // Clear URL input when file is selected
+                document.getElementById('promptImageURL').value = '';
+            }
+        }
+
+        // Clear image preview
+        function clearImagePreview() {
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('previewImg').src = '';
+            document.getElementById('promptImageFile').value = '';
+            document.getElementById('fileName').textContent = '';
+            selectedFile = null;
+        }
+
+        // Validate image URL and detect Google Drive links
+        function validateImageURL() {
+            const urlInput = document.getElementById('promptImageURL');
+            const url = urlInput.value.trim();
+            const googleDriveOptions = document.getElementById('googleDriveOptions');
+            const urlStatus = document.getElementById('urlStatus');
+            const urlStatusText = document.getElementById('urlStatusText');
+
+            if (!url) {
+                googleDriveOptions.classList.add('hidden');
+                urlStatus.classList.add('hidden');
+                return;
+            }
+
+            // Check if it's a Google Drive URL
+            if (isGoogleDriveURL(url)) {
+                googleDriveOptions.classList.remove('hidden');
+                urlStatus.classList.remove('hidden');
+                urlStatusText.innerHTML = '<i class="fas fa-info-circle text-blue-500 mr-1"></i>ตรวจพบลิงค์ Google Drive - คลิก "แปลงลิงค์" เพื่อแปลงเป็นรูปแบบที่แสดงได้';
+                urlStatusText.className = 'text-blue-600';
+            } else {
+                googleDriveOptions.classList.add('hidden');
+                // Test if regular image URL works
+                testImageURL(url);
+            }
+        }
+
+        // Check if URL is Google Drive
+        function isGoogleDriveURL(url) {
+            return url.includes('drive.google.com') || url.includes('docs.google.com');
+        }
+
+        // Test if image URL is accessible
+        function testImageURL(url) {
+            const urlStatus = document.getElementById('urlStatus');
+            const urlStatusText = document.getElementById('urlStatusText');
+            
+            const img = new Image();
+            img.onload = function() {
+                urlStatus.classList.remove('hidden');
+                urlStatusText.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>ลิงค์รูปภาพใช้งานได้';
+                urlStatusText.className = 'text-green-600';
+                
+                // Show preview
+                document.getElementById('previewImg').src = url;
+                document.getElementById('imagePreview').classList.remove('hidden');
+            };
+            img.onerror = function() {
+                urlStatus.classList.remove('hidden');
+                urlStatusText.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500 mr-1"></i>ไม่สามารถโหลดรูปภาพได้ กรุณาตรวจสอบลิงค์';
+                urlStatusText.className = 'text-red-600';
+            };
+            img.src = url;
+        }
+
+        // Convert Google Drive URL to direct image link
+        function convertGoogleDriveURL() {
+            const urlInput = document.getElementById('promptImageURL');
+            const url = urlInput.value.trim();
+            const selectedFormat = document.querySelector('input[name="driveFormat"]:checked').value;
+
+            if (!url) {
+                showToast('กรุณาใส่ลิงค์ Google Drive ก่อน', 'error');
+                return;
+            }
+
+            const fileId = extractGoogleDriveFileId(url);
+            if (!fileId) {
+                showToast('ไม่สามารถดึง File ID จากลิงค์ได้', 'error');
+                return;
+            }
+
+            let convertedURL;
+            if (selectedFormat === 'lh3') {
+                convertedURL = `https://lh3.googleusercontent.com/d/${fileId}`;
+            } else {
+                convertedURL = `https://lh5.googleusercontent.com/d/${fileId}`;
+            }
+
+            urlInput.value = convertedURL;
+            
+            // Test the converted URL
+            testImageURL(convertedURL);
+            
+            showToast(`แปลงลิงค์เป็น ${selectedFormat} สำเร็จ!`);
+        }
+
+        // Extract Google Drive File ID from various URL formats
+        function extractGoogleDriveFileId(url) {
+            // Handle different Google Drive URL formats
+            let fileId = null;
+            
+            // Format: https://drive.google.com/file/d/FILE_ID/view
+            let match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (match) {
+                fileId = match[1];
+            }
+            
+            // Format: https://drive.google.com/open?id=FILE_ID
+            if (!fileId) {
+                match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (match) {
+                    fileId = match[1];
+                }
+            }
+            
+            // Format: https://docs.google.com/document/d/FILE_ID/
+            if (!fileId) {
+                match = url.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
+                if (match) {
+                    fileId = match[1];
+                }
+            }
+
+            return fileId;
+        }
+
+        // Upload file to Google Drive
+        async function uploadFileToGoogleDrive(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const base64Data = e.target.result.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+                        const fileName = `prompt_${Date.now()}_${file.name}`;
+                        
+                        const uploadData = {
+                            action: 'upload',
+                            fileName: fileName,
+                            fileData: base64Data,
+                            mimeType: file.type
+                        };
+
+                        const response = await fetch(API_ENDPOINT, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'text/plain',
+                            },
+                            body: JSON.stringify(uploadData),
+                            mode: 'cors'
+                        });
+
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            resolve(result.fileUrl);
+                        } else {
+                            reject(new Error(result.message || 'Upload failed'));
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
         }
 
         // Add new prompt
@@ -511,25 +789,42 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังบันทึก...';
             submitBtn.disabled = true;
 
-            const formData = {
-                action: 'add',
-                name: document.getElementById('promptName').value.trim(),
-                description: document.getElementById('promptDescription').value.trim(),
-                imageURL: document.getElementById('promptImageURL').value.trim(),
-                type: document.getElementById('promptType').value,
-                date: new Date().toLocaleDateString('th-TH')
-            };
-
             try {
+                let imageURL = document.getElementById('promptImageURL').value.trim();
+                
+                // Upload file if selected
+                if (selectedFile) {
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังอัพโหลดรูปภาพ...';
+                    imageURL = await uploadFileToGoogleDrive(selectedFile);
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังบันทึกข้อมูล...';
+                }
+
+                const formData = {
+                    action: 'add',
+                    name: document.getElementById('promptName').value.trim(),
+                    description: document.getElementById('promptDescription').value.trim(),
+                    imageURL: imageURL,
+                    type: document.getElementById('promptType').value,
+                    date: new Date().toLocaleDateString('th-TH')
+                };
+
+                console.log('Sending data:', formData);
+
                 const response = await fetch(API_ENDPOINT, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'text/plain',
                     },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(formData),
+                    mode: 'cors'
                 });
 
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const result = await response.json();
+                console.log('Response:', result);
                 
                 if (result.success) {
                     showToast('เพิ่ม Prompt สำเร็จ!');
@@ -541,7 +836,7 @@
                 }
             } catch (error) {
                 console.error('Error adding prompt:', error);
-                showToast('เกิดข้อผิดพลาดในการเพิ่มข้อมูล', 'error');
+                showToast('เกิดข้อผิดพลาดในการเพิ่มข้อมูล: ' + error.message, 'error');
             } finally {
                 submitBtn.innerHTML = originalText;
                 submitBtn.disabled = false;
@@ -619,5 +914,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97ee7a6767130548',t:'MTc1NzgzODE2My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97eeb5cc229aef6d',t:'MTc1Nzg0MDU5Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
