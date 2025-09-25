@@ -110,11 +110,26 @@
                         </div>
                         <div>
                             <label class="block text-gray-700 font-medium mb-2 text-sm sm:text-base">ประเภท *</label>
-                            <select id="promptType" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
-                                <option value="">เลือกประเภท</option>
-                                <option value="image" selected>รูปภาพ</option>
-                                <option value="video">วีดิโอ</option>
-                            </select>
+                            <div class="flex items-center space-x-6">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" id="promptTypeImage" name="promptType" value="image" checked required class="mr-2 text-indigo-600 focus:ring-indigo-500">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="bg-blue-100 text-blue-600 p-1 rounded">
+                                            <i class="fas fa-image text-sm"></i>
+                                        </div>
+                                        <span class="text-sm sm:text-base">รูปภาพ</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" id="promptTypeVideo" name="promptType" value="video" required class="mr-2 text-indigo-600 focus:ring-indigo-500">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="bg-purple-100 text-purple-600 p-1 rounded">
+                                            <i class="fas fa-video text-sm"></i>
+                                        </div>
+                                        <span class="text-sm sm:text-base">วีดิโอ</span>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div>
@@ -745,7 +760,7 @@
         // Reset form
         function resetForm() {
             document.getElementById('promptName').value = '';
-            document.getElementById('promptType').value = '';
+            document.getElementById('promptTypeImage').checked = true; // Reset to default (image)
             document.getElementById('promptImageURL').value = '';
             document.getElementById('promptDescription').value = '';
             document.getElementById('promptImageFile').value = '';
@@ -984,7 +999,7 @@
                     name: document.getElementById('promptName').value.trim(),
                     description: document.getElementById('promptDescription').value.trim(),
                     imageURL: imageURL,
-                    type: document.getElementById('promptType').value,
+                    type: document.querySelector('input[name="promptType"]:checked').value,
                     date: new Date().toLocaleDateString('th-TH'),
                     timestamp: Date.now() // Add timestamp for proper sorting
                 };
@@ -1127,5 +1142,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984b0e14620fce27',t:'MTc1ODgwODkwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984b236dc0deec6b',t:'MTc1ODgwOTc3Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
