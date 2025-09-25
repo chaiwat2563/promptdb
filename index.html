@@ -76,7 +76,7 @@
                     </div>
                     <div>
                         <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">ระบบจัดเก็บ Prompt</h1>
-                        <p class="text-sm sm:text-base text-gray-600">สำหรับสร้างรูปภาพและวีดิโอ</p>
+                        <p class="text-sm sm:text-base text-gray-600">สำหรับสร้างรูปภาพและวีดิโอ • จัดทำโดย Chaiwat Promma</p>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
@@ -375,9 +375,11 @@
             const card = document.createElement('div');
             card.className = 'bg-white rounded-xl shadow-lg card-hover fade-in';
             
-            const truncatedDescription = prompt.description.length > 150 
-                ? prompt.description.substring(0, 150) + '...' 
-                : prompt.description;
+            // Apply text filtering for display
+            const filteredDescription = filterTextForDisplay(prompt.description);
+            const truncatedDescription = filteredDescription.length > 150 
+                ? filteredDescription.substring(0, 150) + '...' 
+                : filteredDescription;
 
             const typeIcon = prompt.type === 'video' ? 'fa-video' : 'fa-image';
             const typeColor = prompt.type === 'video' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600';
@@ -420,8 +422,8 @@
                         <div class="scroll-description text-gray-700 text-xs sm:text-sm leading-relaxed">
                             ${truncatedDescription}
                         </div>
-                        ${prompt.description.length > 150 ? `
-                            <button onclick="showModal(\`${prompt.name.replace(/`/g, '\\`')}\`, \`${prompt.description.replace(/`/g, '\\`')}\`); return false;" 
+                        ${filteredDescription.length > 150 ? `
+                            <button onclick="showModalSafe(${index}); return false;" 
                                     class="text-indigo-500 hover:text-indigo-600 text-xs sm:text-sm font-medium mt-2 transition-colors block">
                                 ดูรายละเอียด <i class="fas fa-arrow-right ml-1"></i>
                             </button>
@@ -429,7 +431,7 @@
                     </div>
                     
                     <div class="flex space-x-2">
-                        <button onclick="copyToClipboard(\`${prompt.description.replace(/`/g, '\\`')}\`); return false;" 
+                        <button onclick="copyPromptSafe(${index}); return false;" 
                                 class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium">
                             <i class="fas fa-copy mr-1 sm:mr-2"></i>คัดลอก
                         </button>
@@ -559,13 +561,56 @@
             }, 3000);
         }
 
+        // Filter text for display (removes special characters, emojis, line breaks)
+        function filterTextForDisplay(text) {
+            if (!text) return text;
+            
+            return text
+                // Remove emojis and special Unicode characters
+                .replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
+                // Remove other special characters but keep basic punctuation
+                .replace(/[^\u0E00-\u0E7F\u0020-\u007E\s\n\r\t]/g, '')
+                // Normalize line breaks
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                // Remove excessive line breaks (more than 2 consecutive)
+                .replace(/\n{3,}/g, '\n\n')
+                // Remove leading/trailing whitespace
+                .trim();
+        }
+
         // Show modal
         function showModal(title, content) {
             document.getElementById('modalTitle').textContent = title;
-            document.getElementById('modalContent').textContent = content;
+            // Apply text filtering for display only
+            const filteredContent = filterTextForDisplay(content);
+            document.getElementById('modalContent').textContent = filteredContent;
+            // Keep original content for copying
             currentModalContent = content;
             document.getElementById('modal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
+        }
+
+        // Safe modal function using index
+        function showModalSafe(cardIndex) {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const promptIndex = startIndex + cardIndex;
+            const prompt = filteredPrompts[promptIndex];
+            
+            if (prompt) {
+                showModal(prompt.name, prompt.description);
+            }
+        }
+
+        // Safe copy function using index
+        function copyPromptSafe(cardIndex) {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const promptIndex = startIndex + cardIndex;
+            const prompt = filteredPrompts[promptIndex];
+            
+            if (prompt) {
+                copyToClipboard(prompt.description);
+            }
         }
 
         // Close modal
@@ -1082,5 +1127,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'980f998ae58b731f',t:'MTc1ODE4NTQ2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984b0e14620fce27',t:'MTc1ODgwODkwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
