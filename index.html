@@ -399,6 +399,12 @@
             const typeIcon = prompt.type === 'video' ? 'fa-video' : 'fa-image';
             const typeColor = prompt.type === 'video' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600';
 
+            // Store prompt data directly in the card element for reliable access
+            card.setAttribute('data-prompt-id', prompt.id);
+            card.setAttribute('data-prompt-name', prompt.name);
+            card.setAttribute('data-prompt-description', prompt.description);
+            card.setAttribute('data-prompt-image', prompt.imageURL || '');
+
             card.innerHTML = `
                 <div class="p-4 sm:p-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start mb-4 space-y-2 sm:space-y-0">
@@ -425,7 +431,7 @@
                         <div class="mb-4">
                             <img src="${prompt.imageURL}" alt="${prompt.name}" 
                                  class="w-full h-32 sm:h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                                 onclick="showImageModal(\`${prompt.imageURL}\`, \`${prompt.name.replace(/`/g, '\\`')}\`); return false;"
+                                 onclick="showImageModalFromCard(this); return false;"
                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                             <div class="hidden w-full h-32 sm:h-40 bg-gray-100 rounded-lg flex items-center justify-center">
                                 <i class="fas fa-image text-gray-400 text-xl sm:text-2xl"></i>
@@ -438,7 +444,7 @@
                             ${truncatedDescription}
                         </div>
                         ${filteredDescription.length > 150 ? `
-                            <button onclick="showModalSafe(${index}); return false;" 
+                            <button onclick="showModalFromCard(this); return false;" 
                                     class="text-indigo-500 hover:text-indigo-600 text-xs sm:text-sm font-medium mt-2 transition-colors block">
                                 ดูรายละเอียด <i class="fas fa-arrow-right ml-1"></i>
                             </button>
@@ -446,7 +452,7 @@
                     </div>
                     
                     <div class="flex space-x-2">
-                        <button onclick="copyPromptSafe(${index}); return false;" 
+                        <button onclick="copyPromptFromCard(this); return false;" 
                                 class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium">
                             <i class="fas fa-copy mr-1 sm:mr-2"></i>คัดลอก
                         </button>
@@ -606,7 +612,7 @@
             document.body.style.overflow = 'hidden';
         }
 
-        // Safe modal function using index
+        // Safe modal function using index (kept for backward compatibility)
         function showModalSafe(cardIndex) {
             const startIndex = (currentPage - 1) * itemsPerPage;
             const promptIndex = startIndex + cardIndex;
@@ -617,7 +623,7 @@
             }
         }
 
-        // Safe copy function using index
+        // Safe copy function using index (kept for backward compatibility)
         function copyPromptSafe(cardIndex) {
             const startIndex = (currentPage - 1) * itemsPerPage;
             const promptIndex = startIndex + cardIndex;
@@ -625,6 +631,39 @@
             
             if (prompt) {
                 copyToClipboard(prompt.description);
+            }
+        }
+
+        // New functions that get data directly from card element
+        function showModalFromCard(buttonElement) {
+            const card = buttonElement.closest('.bg-white');
+            if (card) {
+                const name = card.getAttribute('data-prompt-name');
+                const description = card.getAttribute('data-prompt-description');
+                if (name && description) {
+                    showModal(name, description);
+                }
+            }
+        }
+
+        function copyPromptFromCard(buttonElement) {
+            const card = buttonElement.closest('.bg-white');
+            if (card) {
+                const description = card.getAttribute('data-prompt-description');
+                if (description) {
+                    copyToClipboard(description);
+                }
+            }
+        }
+
+        function showImageModalFromCard(imgElement) {
+            const card = imgElement.closest('.bg-white');
+            if (card) {
+                const imageURL = card.getAttribute('data-prompt-image');
+                const name = card.getAttribute('data-prompt-name');
+                if (imageURL && name) {
+                    showImageModal(imageURL, name);
+                }
             }
         }
 
@@ -1142,5 +1181,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984b236dc0deec6b',t:'MTc1ODgwOTc3Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'985ad8a01502f8ee',t:'MTc1ODk3NDQ4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
