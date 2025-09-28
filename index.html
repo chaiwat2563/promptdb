@@ -75,7 +75,7 @@
                         <i class="fas fa-image text-white text-xl sm:text-2xl"></i>
                     </div>
                     <div>
-                        <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">ระบบจัดเก็บ Prompt v1.2</h1>
+                        <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">ระบบจัดเก็บ Prompt</h1>
                         <p class="text-sm sm:text-base text-gray-600">สำหรับสร้างรูปภาพและวีดิโอ • จัดทำโดย Chaiwat Promma</p>
                     </div>
                 </div>
@@ -200,6 +200,28 @@
 
         <!-- Controls -->
         <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+            <!-- Search Bar -->
+            <div class="mb-4 sm:mb-6">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <label class="text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">
+                        <i class="fas fa-search text-indigo-500 mr-2"></i>ค้นหา:
+                    </label>
+                    <div class="flex-1 flex space-x-2">
+                        <input type="text" id="searchInput" placeholder="ค้นหาจากชื่อหรือคำอธิบาย..." 
+                               class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base"
+                               oninput="searchPrompts()">
+                        <button onclick="clearSearch()" id="clearSearchBtn" class="hidden bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="searchResults" class="hidden mt-2 text-sm text-gray-600">
+                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                    พบ <span id="searchCount">0</span> รายการจากการค้นหา "<span id="searchTerm"></span>"
+                </div>
+            </div>
+            
+            <!-- Other Controls -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
                     <label class="text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">แสดงต่อหน้า:</label>
@@ -322,6 +344,8 @@
         let currentModalContent = '';
         let selectedFile = null;
         let uploadedImageURL = '';
+        let currentSearchTerm = '';
+        let searchTimeout = null;
 
         // API Configuration - Updated with your Google Apps Script Web App URL
         const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbz4FwtGWUL2nXENdNAWq2Wt4C5_QUgNXTvYguHakg9QrfjB8v91EEQsZkFUIT_3M1SLBg/exec';
@@ -1095,16 +1119,97 @@
             displayPrompts();
         }
 
-        // Filter by type
-        function filterByType() {
-            const selectedType = document.getElementById('typeFilter').value;
-            if (selectedType === '') {
-                filteredPrompts = [...allPrompts];
-            } else {
-                filteredPrompts = allPrompts.filter(prompt => prompt.type === selectedType);
+        // Search prompts
+        function searchPrompts() {
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
             }
             
-            // Maintain sort order (highest ID first) after filtering
+            // Add debounce to avoid too many searches
+            searchTimeout = setTimeout(() => {
+                const searchInput = document.getElementById('searchInput');
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                const clearBtn = document.getElementById('clearSearchBtn');
+                const searchResults = document.getElementById('searchResults');
+                const searchCount = document.getElementById('searchCount');
+                const searchTermSpan = document.getElementById('searchTerm');
+                
+                currentSearchTerm = searchTerm;
+                
+                if (searchTerm === '') {
+                    // No search term - apply type filter only
+                    applyFilters();
+                    clearBtn.classList.add('hidden');
+                    searchResults.classList.add('hidden');
+                } else {
+                    // Show clear button
+                    clearBtn.classList.remove('hidden');
+                    
+                    // Search in both name and description
+                    let searchResults_data = allPrompts.filter(prompt => {
+                        const nameMatch = prompt.name.toLowerCase().includes(searchTerm);
+                        const descriptionMatch = prompt.description.toLowerCase().includes(searchTerm);
+                        return nameMatch || descriptionMatch;
+                    });
+                    
+                    // Apply type filter to search results
+                    const selectedType = document.getElementById('typeFilter').value;
+                    if (selectedType !== '') {
+                        searchResults_data = searchResults_data.filter(prompt => prompt.type === selectedType);
+                    }
+                    
+                    filteredPrompts = searchResults_data;
+                    
+                    // Maintain sort order (highest ID first)
+                    filteredPrompts.sort((a, b) => {
+                        return b.id - a.id;
+                    });
+                    
+                    // Show search results info
+                    searchCount.textContent = filteredPrompts.length;
+                    searchTermSpan.textContent = searchInput.value.trim();
+                    searchResults.classList.remove('hidden');
+                    
+                    currentPage = 1;
+                    displayPrompts();
+                }
+            }, 300); // 300ms debounce
+        }
+
+        // Clear search
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            document.getElementById('searchResults').classList.add('hidden');
+            currentSearchTerm = '';
+            
+            // Apply filters without search
+            applyFilters();
+        }
+
+        // Apply filters (type filter and search)
+        function applyFilters() {
+            let results = [...allPrompts];
+            
+            // Apply search filter
+            if (currentSearchTerm !== '') {
+                results = results.filter(prompt => {
+                    const nameMatch = prompt.name.toLowerCase().includes(currentSearchTerm);
+                    const descriptionMatch = prompt.description.toLowerCase().includes(currentSearchTerm);
+                    return nameMatch || descriptionMatch;
+                });
+            }
+            
+            // Apply type filter
+            const selectedType = document.getElementById('typeFilter').value;
+            if (selectedType !== '') {
+                results = results.filter(prompt => prompt.type === selectedType);
+            }
+            
+            filteredPrompts = results;
+            
+            // Maintain sort order (highest ID first)
             filteredPrompts.sort((a, b) => {
                 return b.id - a.id;
             });
@@ -1113,10 +1218,28 @@
             displayPrompts();
         }
 
+        // Filter by type (updated to work with search)
+        function filterByType() {
+            applyFilters();
+            
+            // Update search results display if there's an active search
+            if (currentSearchTerm !== '') {
+                const searchCount = document.getElementById('searchCount');
+                searchCount.textContent = filteredPrompts.length;
+            }
+        }
+
         // Refresh data
         function refreshData() {
             currentPage = 1;
             document.getElementById('typeFilter').value = '';
+            
+            // Clear search
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            document.getElementById('searchResults').classList.add('hidden');
+            currentSearchTerm = '';
+            
             loadData();
         }
 
@@ -1181,8 +1304,5 @@
             }
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'985ad8a01502f8ee',t:'MTc1ODk3NDQ4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'985f7fe0d713fd39',t:'MTc1OTAyMzI3OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
-
-
-
