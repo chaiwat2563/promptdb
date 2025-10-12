@@ -1,1 +1,1308 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดเก็บ Prompt สำหรับสร้างรูปภาพและวีดิโอ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Kanit', sans-serif; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
+        
+        /* Mobile touch improvements */
+        @media (max-width: 640px) {
+            .card-hover:active { transform: translateY(-2px); }
+            button:active { transform: scale(0.98); }
+        }
+        
+        /* Better mobile scrolling */
+        .scroll-description { -webkit-overflow-scrolling: touch; }
+        
+        /* Mobile-friendly tap targets */
+        @media (max-width: 640px) {
+            button { min-height: 44px; }
+            input, select, textarea { min-height: 44px; }
+        }
+        .scroll-description { 
+            max-height: 120px; 
+            overflow-y: auto; 
+            padding-right: 8px;
+            margin-right: -8px;
+        }
+        .scroll-description::-webkit-scrollbar { 
+            width: 6px; 
+        }
+        .scroll-description::-webkit-scrollbar-track { 
+            background: #f8f9fa; 
+            border-radius: 3px; 
+            margin: 2px 0;
+        }
+        .scroll-description::-webkit-scrollbar-thumb { 
+            background: #cbd5e0; 
+            border-radius: 3px; 
+            border: 1px solid #e2e8f0;
+        }
+        .scroll-description::-webkit-scrollbar-thumb:hover { 
+            background: #a0aec0; 
+        }
+        .scroll-description::-webkit-scrollbar-thumb:active { 
+            background: #718096; 
+        }
+        
+        /* Firefox scrollbar styling */
+        .scroll-description {
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e0 #f8f9fa;
+        }
+        .toast { transform: translateX(100%); transition: transform 0.3s ease; }
+        .toast.show { transform: translateX(0); }
+        .loading-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-lg border-b-4 border-indigo-500">
+        <div class="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+                <div class="flex items-center space-x-3 sm:space-x-4">
+                    <div class="bg-indigo-500 p-2 sm:p-3 rounded-xl">
+                        <i class="fas fa-image text-white text-xl sm:text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800">ระบบจัดเก็บ Prompt v1.2</h1>
+                        <p class="text-sm sm:text-base text-gray-600">สำหรับสร้างรูปภาพและวีดิโอ • จัดทำโดย Chaiwat Promma</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-4 w-full sm:w-auto">
+                    <button onclick="refreshData()" class="flex-1 sm:flex-none bg-indigo-500 hover:bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base">
+                        <i class="fas fa-sync-alt mr-1 sm:mr-2"></i>รีเฟรช
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
 
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
+        <!-- Add Prompt Form -->
+        <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0 mb-4 sm:mb-6">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-800">
+                    <i class="fas fa-plus-circle text-indigo-500 mr-2"></i>เพิ่ม Prompt ใหม่
+                </h2>
+                <button id="toggleFormBtn" onclick="toggleAddForm()" class="w-full sm:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors text-sm sm:text-base">
+                    <i class="fas fa-plus mr-2"></i>เพิ่ม Prompt
+                </button>
+            </div>
+            
+            <div id="addPromptForm" class="hidden">
+                <form onsubmit="addPrompt(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2 text-sm sm:text-base">ชื่อ Prompt *</label>
+                            <input type="text" id="promptName" required class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base" placeholder="ใส่ชื่อ prompt">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2 text-sm sm:text-base">ประเภท *</label>
+                            <div class="flex items-center space-x-6">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" id="promptTypeImage" name="promptType" value="image" checked required class="mr-2 text-indigo-600 focus:ring-indigo-500">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="bg-blue-100 text-blue-600 p-1 rounded">
+                                            <i class="fas fa-image text-sm"></i>
+                                        </div>
+                                        <span class="text-sm sm:text-base">รูปภาพ</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" id="promptTypeVideo" name="promptType" value="video" required class="mr-2 text-indigo-600 focus:ring-indigo-500">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="bg-purple-100 text-purple-600 p-1 rounded">
+                                            <i class="fas fa-video text-sm"></i>
+                                        </div>
+                                        <span class="text-sm sm:text-base">วีดิโอ</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2 text-sm sm:text-base">รูปภาพ (ไม่บังคับ)</label>
+                        <div class="space-y-3">
+                            <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                                <input type="file" id="promptImageFile" accept="image/*" class="hidden" onchange="handleFileSelect(event)">
+                                <button type="button" onclick="document.getElementById('promptImageFile').click()" class="w-full sm:w-auto bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                                    <i class="fas fa-upload mr-2"></i>เลือกไฟล์รูปภาพ
+                                </button>
+                                <span id="fileName" class="text-xs sm:text-sm text-gray-600 break-all"></span>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                หรือใส่ URL รูปภาพ (รองรับ Google Drive):
+                            </div>
+                            <input type="url" id="promptImageURL" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm" placeholder="https://drive.google.com/file/d/... หรือ https://example.com/image.jpg" onblur="validateImageURL()">
+                            
+                            <!-- Google Drive Link Options -->
+                            <div id="googleDriveOptions" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                <div class="flex items-center space-x-4 mb-2">
+                                    <span class="text-sm font-medium text-blue-800">ตัวเลือกลิงค์ Google Drive:</span>
+                                </div>
+                                <div class="flex items-center space-x-6">
+                                    <label class="flex items-center">
+                                        <input type="radio" name="driveFormat" value="lh3" checked class="mr-2 text-blue-600">
+                                        <span class="text-sm text-blue-700">lh3 (แนะนำ)</span>
+                                    </label>
+                                    <label class="flex items-center">
+                                        <input type="radio" name="driveFormat" value="lh5" class="mr-2 text-blue-600">
+                                        <span class="text-sm text-blue-700">lh5</span>
+                                    </label>
+                                </div>
+                                <div class="mt-2">
+                                    <button type="button" onclick="convertGoogleDriveURL()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">
+                                        <i class="fas fa-sync mr-1"></i>แปลงลิงค์
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="imagePreview" class="hidden">
+                                <img id="previewImg" class="w-32 h-32 object-cover rounded-lg border" alt="Preview">
+                                <button type="button" onclick="clearImagePreview()" class="mt-2 text-red-500 hover:text-red-600 text-sm">
+                                    <i class="fas fa-times mr-1"></i>ลบรูปภาพ
+                                </button>
+                            </div>
+                            
+                            <!-- URL Status -->
+                            <div id="urlStatus" class="hidden text-xs">
+                                <span id="urlStatusText"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2 text-sm sm:text-base">คำอธิบาย Prompt *</label>
+                        <textarea id="promptDescription" required rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none text-sm sm:text-base" placeholder="ใส่คำอธิบาย prompt ที่ละเอียด..."></textarea>
+                    </div>
+                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                        <button type="submit" id="submitBtn" class="flex-1 sm:flex-none bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors text-sm sm:text-base">
+                            <i class="fas fa-save mr-2"></i>บันทึก
+                        </button>
+                        <button type="button" onclick="cancelAddForm()" class="flex-1 sm:flex-none bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors text-sm sm:text-base">
+                            <i class="fas fa-times mr-2"></i>ยกเลิก
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="bg-white rounded-xl shadow-lg p-4 sm:p-6 mb-6 sm:mb-8">
+            <!-- Search Bar -->
+            <div class="mb-4 sm:mb-6">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <label class="text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">
+                        <i class="fas fa-search text-indigo-500 mr-2"></i>ค้นหา:
+                    </label>
+                    <div class="flex-1 flex space-x-2">
+                        <input type="text" id="searchInput" placeholder="ค้นหาจากชื่อหรือคำอธิบาย..." 
+                               class="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base"
+                               oninput="searchPrompts()">
+                        <button onclick="clearSearch()" id="clearSearchBtn" class="hidden bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="searchResults" class="hidden mt-2 text-sm text-gray-600">
+                    <i class="fas fa-info-circle text-blue-500 mr-1"></i>
+                    พบ <span id="searchCount">0</span> รายการจากการค้นหา "<span id="searchTerm"></span>"
+                </div>
+            </div>
+            
+            <!-- Other Controls -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                    <label class="text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">แสดงต่อหน้า:</label>
+                    <select id="itemsPerPage" onchange="changeItemsPerPage()" class="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
+                        <option value="10">10 รายการ</option>
+                        <option value="20">20 รายการ</option>
+                        <option value="50">50 รายการ</option>
+                    </select>
+                </div>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+                    <label class="text-gray-700 font-medium text-sm sm:text-base whitespace-nowrap">ประเภท:</label>
+                    <select id="typeFilter" onchange="filterByType()" class="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm sm:text-base">
+                        <option value="">ทั้งหมด</option>
+                        <option value="image">รูปภาพ</option>
+                        <option value="video">วีดิโอ</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="text-center py-12">
+            <div class="loading-spinner inline-block w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"></div>
+            <p class="text-gray-600 mt-4">กำลังโหลดข้อมูล...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="errorState" class="hidden bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+            <i class="fas fa-exclamation-triangle text-red-500 text-3xl mb-4"></i>
+            <h3 class="text-red-800 font-semibold text-lg mb-2">เกิดข้อผิดพลาด</h3>
+            <p class="text-red-600 mb-4">ไม่สามารถโหลดข้อมูลได้ กรุณาลองใหม่อีกครั้ง</p>
+            <button onclick="refreshData()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                <i class="fas fa-redo mr-2"></i>ลองใหม่
+            </button>
+        </div>
+
+        <!-- Cards Grid -->
+        <div id="cardsContainer" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <!-- Cards will be inserted here -->
+        </div>
+
+        <!-- Pagination -->
+        <div id="paginationContainer" class="hidden bg-white rounded-xl shadow-lg p-4 sm:p-6">
+            <div class="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
+                <div class="text-gray-600 text-xs sm:text-sm text-center lg:text-left">
+                    แสดง <span id="showingStart">1</span>-<span id="showingEnd">10</span> จาก <span id="totalItems">0</span> รายการ
+                </div>
+                <div class="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 w-full lg:w-auto">
+                    <!-- Jump to page -->
+                    <div class="flex items-center space-x-2 text-xs sm:text-sm">
+                        <span class="text-gray-600 whitespace-nowrap">ไปหน้า:</span>
+                        <input type="number" id="jumpToPage" min="1" class="w-12 sm:w-16 px-1 sm:px-2 py-1 border border-gray-300 rounded text-center text-xs sm:text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent" onkeypress="handleJumpToPage(event)">
+                        <span class="text-gray-600 whitespace-nowrap">จาก <span id="totalPages">1</span></span>
+                    </div>
+                    <!-- Pagination buttons -->
+                    <div class="flex items-center space-x-1 overflow-x-auto pb-1" id="paginationButtons">
+                        <!-- Pagination buttons will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="toastMessage">คัดลอกสำเร็จ!</span>
+        </div>
+    </div>
+
+    <!-- Modal for Full Description -->
+    <div id="modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-hidden">
+            <div class="p-4 sm:p-6 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-lg sm:text-xl font-semibold text-gray-800 pr-4" id="modalTitle">รายละเอียด Prompt</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-xl sm:text-2xl flex-shrink-0">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 sm:p-6 overflow-y-auto max-h-[50vh] sm:max-h-[60vh]">
+                <div id="modalContent" class="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm sm:text-base"></div>
+            </div>
+            <div class="p-4 sm:p-6 border-t border-gray-200">
+                <button onclick="copyModalContent()" class="w-full sm:w-auto bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors text-sm sm:text-base">
+                    <i class="fas fa-copy mr-2"></i>คัดลอก
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
+        <div class="relative max-w-[90vw] max-h-[90vh] flex flex-col">
+            <!-- Close button -->
+            <button onclick="closeImageModal()" class="absolute -top-12 right-0 text-white hover:text-gray-300 text-2xl z-10 bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <!-- Image container -->
+            <div class="flex items-center justify-center w-full h-full">
+                <img id="modalImage" class="max-w-[90vw] max-h-[80vh] w-auto h-auto object-contain rounded-lg shadow-2xl" alt="รูปภาพขนาดใหญ่">
+            </div>
+            
+            <!-- Image info -->
+            <div class="bg-black bg-opacity-50 text-white p-3 rounded-b-lg mt-2">
+                <p id="imageModalTitle" class="font-medium text-center"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let allPrompts = [];
+        let filteredPrompts = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
+        let currentModalContent = '';
+        let selectedFile = null;
+        let uploadedImageURL = '';
+        let currentSearchTerm = '';
+        let searchTimeout = null;
+
+        // API Configuration - Updated with your Google Apps Script Web App URL
+        const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbz4FwtGWUL2nXENdNAWq2Wt4C5_QUgNXTvYguHakg9QrfjB8v91EEQsZkFUIT_3M1SLBg/exec';
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+
+        // Load data from Google Sheets
+        async function loadData() {
+            showLoading();
+            try {
+                const response = await fetch(API_ENDPOINT);
+                const data = await response.json();
+                
+                if (data.success && Array.isArray(data.data)) {
+                    allPrompts = data.data.map((row, index) => ({
+                        id: row[0] || index + 1,
+                        name: row[1] || 'ไม่มีชื่อ',
+                        description: row[2] || 'ไม่มีคำอธิบาย',
+                        imageURL: row[3] || '',
+                        type: row[4] || 'image',
+                        date: row[5] || new Date().toLocaleDateString('th-TH'),
+                        timestamp: row[6] || Date.now() // Add timestamp for sorting
+                    }));
+                    
+                    // Sort by ID (highest to lowest)
+                    allPrompts.sort((a, b) => {
+                        return b.id - a.id; // Descending order (highest ID first)
+                    });
+                    
+                    filteredPrompts = [...allPrompts];
+                    displayPrompts();
+                    hideLoading();
+                } else {
+                    throw new Error('Invalid data format');
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                showError();
+            }
+        }
+
+        // Display prompts
+        function displayPrompts() {
+            const container = document.getElementById('cardsContainer');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pagePrompts = filteredPrompts.slice(startIndex, endIndex);
+
+            container.innerHTML = '';
+
+            pagePrompts.forEach((prompt, index) => {
+                const card = createPromptCard(prompt, startIndex + index);
+                container.appendChild(card);
+            });
+
+            updatePagination();
+            container.classList.remove('hidden');
+            document.getElementById('paginationContainer').classList.remove('hidden');
+        }
+
+        // Create prompt card
+        function createPromptCard(prompt, index) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl shadow-lg card-hover fade-in';
+            
+            // Apply text filtering for display
+            const filteredDescription = filterTextForDisplay(prompt.description);
+            const truncatedDescription = filteredDescription.length > 150 
+                ? filteredDescription.substring(0, 150) + '...' 
+                : filteredDescription;
+
+            const typeIcon = prompt.type === 'video' ? 'fa-video' : 'fa-image';
+            const typeColor = prompt.type === 'video' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600';
+
+            // Store prompt data directly in the card element for reliable access
+            card.setAttribute('data-prompt-id', prompt.id);
+            card.setAttribute('data-prompt-name', prompt.name);
+            card.setAttribute('data-prompt-description', prompt.description);
+            card.setAttribute('data-prompt-image', prompt.imageURL || '');
+
+            card.innerHTML = `
+                <div class="p-4 sm:p-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start mb-4 space-y-2 sm:space-y-0">
+                        <div class="flex items-center space-x-3 flex-1 min-w-0">
+                            <div class="${typeColor} p-2 rounded-lg flex-shrink-0">
+                                <i class="fas ${typeIcon} text-sm sm:text-base"></i>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <h3 class="font-semibold text-gray-800 text-base sm:text-lg truncate">${prompt.name}</h3>
+                                    <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs font-medium flex-shrink-0">
+                                        #${prompt.id}
+                                    </span>
+                                </div>
+                                <p class="text-xs sm:text-sm text-gray-500">${prompt.date}</p>
+                            </div>
+                        </div>
+                        <span class="${typeColor} px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0">
+                            ${prompt.type === 'video' ? 'วีดิโอ' : 'รูปภาพ'}
+                        </span>
+                    </div>
+                    
+                    ${prompt.imageURL ? `
+                        <div class="mb-4">
+                            <img src="${prompt.imageURL}" alt="${prompt.name}" 
+                                 class="w-full h-32 sm:h-40 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                                 onclick="showImageModalFromCard(this); return false;"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <div class="hidden w-full h-32 sm:h-40 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-image text-gray-400 text-xl sm:text-2xl"></i>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="mb-4">
+                        <div class="scroll-description text-gray-700 text-xs sm:text-sm leading-relaxed">
+                            ${truncatedDescription}
+                        </div>
+                        ${filteredDescription.length > 150 ? `
+                            <button onclick="showModalFromCard(this); return false;" 
+                                    class="text-indigo-500 hover:text-indigo-600 text-xs sm:text-sm font-medium mt-2 transition-colors block">
+                                ดูรายละเอียด <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="flex space-x-2">
+                        <button onclick="copyPromptFromCard(this); return false;" 
+                                class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm font-medium">
+                            <i class="fas fa-copy mr-1 sm:mr-2"></i>คัดลอก
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Copy to clipboard
+        async function copyToClipboard(text) {
+            try {
+                // Method 1: Modern Clipboard API (works in secure contexts)
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    showToast('คัดลอกสำเร็จ!');
+                    return;
+                }
+                
+                // Method 2: Fallback using textarea and execCommand
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'absolute';
+                textArea.style.left = '-9999px';
+                textArea.style.top = '-9999px';
+                textArea.style.opacity = '0';
+                textArea.style.pointerEvents = 'none';
+                textArea.setAttribute('readonly', '');
+                textArea.setAttribute('tabindex', '-1');
+                
+                document.body.appendChild(textArea);
+                
+                // For mobile devices
+                if (navigator.userAgent.match(/ipad|ipod|iphone/i)) {
+                    textArea.contentEditable = true;
+                    textArea.readOnly = false;
+                    const range = document.createRange();
+                    range.selectNodeContents(textArea);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    textArea.setSelectionRange(0, 999999);
+                } else {
+                    textArea.select();
+                    textArea.setSelectionRange(0, 99999);
+                }
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        showToast('คัดลอกสำเร็จ!');
+                    } else {
+                        throw new Error('execCommand failed');
+                    }
+                } catch (execErr) {
+                    console.error('execCommand failed:', execErr);
+                    // Method 3: Show text in modal for manual copy
+                    showCopyModal(text);
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+                
+            } catch (err) {
+                console.error('All copy methods failed:', err);
+                // Final fallback: Show text in modal
+                showCopyModal(text);
+            }
+        }
+
+        // Show copy modal as final fallback
+        function showCopyModal(text) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+            modal.innerHTML = `
+                <div class="bg-white rounded-xl max-w-md w-full p-6">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-copy text-indigo-500 text-3xl mb-2"></i>
+                        <h3 class="text-lg font-semibold text-gray-800">คัดลอกข้อความ</h3>
+                        <p class="text-sm text-gray-600 mt-2">กรุณาเลือกข้อความด้านล่างและกด Ctrl+C (หรือ Cmd+C บน Mac)</p>
+                    </div>
+                    <textarea readonly class="w-full h-32 p-3 border border-gray-300 rounded-lg text-sm resize-none" onclick="this.select()">${text}</textarea>
+                    <div class="flex space-x-3 mt-4">
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            ปิด
+                        </button>
+                        <button onclick="document.querySelector('textarea').select(); this.parentElement.parentElement.parentElement.remove();" class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            เลือกข้อความ
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            // Auto-select text
+            setTimeout(() => {
+                const textarea = modal.querySelector('textarea');
+                textarea.focus();
+                textarea.select();
+            }, 100);
+            
+            // Close on outside click
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            // Update toast styling based on type
+            if (type === 'error') {
+                toast.className = 'toast fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                toastMessage.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
+            } else {
+                toast.className = 'toast fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+                toastMessage.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+            }
+            
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Filter text for display (removes special characters, emojis, line breaks)
+        function filterTextForDisplay(text) {
+            if (!text) return text;
+            
+            return text
+                // Remove emojis and special Unicode characters
+                .replace(/[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '')
+                // Remove other special characters but keep basic punctuation
+                .replace(/[^\u0E00-\u0E7F\u0020-\u007E\s\n\r\t]/g, '')
+                // Normalize line breaks
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                // Remove excessive line breaks (more than 2 consecutive)
+                .replace(/\n{3,}/g, '\n\n')
+                // Remove leading/trailing whitespace
+                .trim();
+        }
+
+        // Show modal
+        function showModal(title, content) {
+            document.getElementById('modalTitle').textContent = title;
+            // Apply text filtering for display only
+            const filteredContent = filterTextForDisplay(content);
+            document.getElementById('modalContent').textContent = filteredContent;
+            // Keep original content for copying
+            currentModalContent = content;
+            document.getElementById('modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Safe modal function using index (kept for backward compatibility)
+        function showModalSafe(cardIndex) {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const promptIndex = startIndex + cardIndex;
+            const prompt = filteredPrompts[promptIndex];
+            
+            if (prompt) {
+                showModal(prompt.name, prompt.description);
+            }
+        }
+
+        // Safe copy function using index (kept for backward compatibility)
+        function copyPromptSafe(cardIndex) {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const promptIndex = startIndex + cardIndex;
+            const prompt = filteredPrompts[promptIndex];
+            
+            if (prompt) {
+                copyToClipboard(prompt.description);
+            }
+        }
+
+        // New functions that get data directly from card element
+        function showModalFromCard(buttonElement) {
+            const card = buttonElement.closest('.bg-white');
+            if (card) {
+                const name = card.getAttribute('data-prompt-name');
+                const description = card.getAttribute('data-prompt-description');
+                if (name && description) {
+                    showModal(name, description);
+                }
+            }
+        }
+
+        function copyPromptFromCard(buttonElement) {
+            const card = buttonElement.closest('.bg-white');
+            if (card) {
+                const description = card.getAttribute('data-prompt-description');
+                if (description) {
+                    copyToClipboard(description);
+                }
+            }
+        }
+
+        function showImageModalFromCard(imgElement) {
+            const card = imgElement.closest('.bg-white');
+            if (card) {
+                const imageURL = card.getAttribute('data-prompt-image');
+                const name = card.getAttribute('data-prompt-name');
+                if (imageURL && name) {
+                    showImageModal(imageURL, name);
+                }
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Copy modal content
+        function copyModalContent() {
+            copyToClipboard(currentModalContent);
+            closeModal();
+        }
+
+        // Update pagination
+        function updatePagination() {
+            const totalPages = Math.ceil(filteredPrompts.length / itemsPerPage);
+            const startItem = (currentPage - 1) * itemsPerPage + 1;
+            const endItem = Math.min(currentPage * itemsPerPage, filteredPrompts.length);
+
+            document.getElementById('showingStart').textContent = startItem;
+            document.getElementById('showingEnd').textContent = endItem;
+            document.getElementById('totalItems').textContent = filteredPrompts.length;
+            document.getElementById('totalPages').textContent = totalPages;
+            document.getElementById('jumpToPage').max = totalPages;
+
+            const paginationButtons = document.getElementById('paginationButtons');
+            paginationButtons.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            // First page button
+            if (currentPage > 3) {
+                const firstButton = document.createElement('button');
+                firstButton.className = 'px-2 py-1 text-sm rounded transition-colors bg-white border border-gray-300 text-gray-700 hover:bg-gray-50';
+                firstButton.textContent = '1';
+                firstButton.onclick = () => changePage(1);
+                paginationButtons.appendChild(firstButton);
+
+                if (currentPage > 4) {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-2 py-1 text-gray-400';
+                    dots.textContent = '...';
+                    paginationButtons.appendChild(dots);
+                }
+            }
+
+            // Previous button
+            const prevButton = document.createElement('button');
+            prevButton.className = `px-2 py-1 text-sm rounded transition-colors ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`;
+            prevButton.innerHTML = '<i class="fas fa-chevron-left text-xs"></i>';
+            prevButton.disabled = currentPage === 1;
+            prevButton.onclick = () => changePage(currentPage - 1);
+            paginationButtons.appendChild(prevButton);
+
+            // Page numbers around current page
+            const maxVisiblePages = 3;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageButton = document.createElement('button');
+                pageButton.className = `px-2 py-1 text-sm rounded transition-colors ${i === currentPage ? 'bg-indigo-500 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`;
+                pageButton.textContent = i;
+                pageButton.onclick = () => changePage(i);
+                paginationButtons.appendChild(pageButton);
+            }
+
+            // Next button
+            const nextButton = document.createElement('button');
+            nextButton.className = `px-2 py-1 text-sm rounded transition-colors ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'}`;
+            nextButton.innerHTML = '<i class="fas fa-chevron-right text-xs"></i>';
+            nextButton.disabled = currentPage === totalPages;
+            nextButton.onclick = () => changePage(currentPage + 1);
+            paginationButtons.appendChild(nextButton);
+
+            // Last page button
+            if (currentPage < totalPages - 2) {
+                if (currentPage < totalPages - 3) {
+                    const dots = document.createElement('span');
+                    dots.className = 'px-2 py-1 text-gray-400';
+                    dots.textContent = '...';
+                    paginationButtons.appendChild(dots);
+                }
+
+                const lastButton = document.createElement('button');
+                lastButton.className = 'px-2 py-1 text-sm rounded transition-colors bg-white border border-gray-300 text-gray-700 hover:bg-gray-50';
+                lastButton.textContent = totalPages;
+                lastButton.onclick = () => changePage(totalPages);
+                paginationButtons.appendChild(lastButton);
+            }
+        }
+
+        // Handle jump to page
+        function handleJumpToPage(event) {
+            if (event.key === 'Enter') {
+                const page = parseInt(event.target.value);
+                const totalPages = Math.ceil(filteredPrompts.length / itemsPerPage);
+                if (page >= 1 && page <= totalPages) {
+                    changePage(page);
+                    event.target.value = '';
+                }
+            }
+        }
+
+        // Toggle add form
+        function toggleAddForm() {
+            const form = document.getElementById('addPromptForm');
+            const btn = document.getElementById('toggleFormBtn');
+            
+            if (form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+                btn.innerHTML = '<i class="fas fa-minus mr-2"></i>ยกเลิก';
+                btn.className = 'bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors';
+            } else {
+                form.classList.add('hidden');
+                btn.innerHTML = '<i class="fas fa-plus mr-2"></i>เพิ่ม Prompt';
+                btn.className = 'bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg transition-colors';
+                resetForm();
+            }
+        }
+
+        // Cancel add form
+        function cancelAddForm() {
+            toggleAddForm();
+        }
+
+        // Reset form
+        function resetForm() {
+            document.getElementById('promptName').value = '';
+            document.getElementById('promptTypeImage').checked = true; // Reset to default (image)
+            document.getElementById('promptImageURL').value = '';
+            document.getElementById('promptDescription').value = '';
+            document.getElementById('promptImageFile').value = '';
+            document.getElementById('fileName').textContent = '';
+            selectedFile = null;
+            uploadedImageURL = '';
+            clearImagePreview();
+            
+            // Hide Google Drive options and status
+            document.getElementById('googleDriveOptions').classList.add('hidden');
+            document.getElementById('urlStatus').classList.add('hidden');
+            
+            // Reset radio button to default (lh3)
+            document.querySelector('input[name="driveFormat"][value="lh3"]').checked = true;
+        }
+
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Validate file type
+                if (!file.type.startsWith('image/')) {
+                    showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น', 'error');
+                    return;
+                }
+
+                // Validate file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('ขนาดไฟล์ต้องไม่เกิน 5MB', 'error');
+                    return;
+                }
+
+                selectedFile = file;
+                document.getElementById('fileName').textContent = file.name;
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+
+                // Clear URL input when file is selected
+                document.getElementById('promptImageURL').value = '';
+            }
+        }
+
+        // Clear image preview
+        function clearImagePreview() {
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('previewImg').src = '';
+            document.getElementById('promptImageFile').value = '';
+            document.getElementById('fileName').textContent = '';
+            selectedFile = null;
+        }
+
+        // Validate image URL and detect Google Drive links
+        function validateImageURL() {
+            const urlInput = document.getElementById('promptImageURL');
+            const url = urlInput.value.trim();
+            const googleDriveOptions = document.getElementById('googleDriveOptions');
+            const urlStatus = document.getElementById('urlStatus');
+            const urlStatusText = document.getElementById('urlStatusText');
+
+            if (!url) {
+                googleDriveOptions.classList.add('hidden');
+                urlStatus.classList.add('hidden');
+                return;
+            }
+
+            // Check if it's a Google Drive URL
+            if (isGoogleDriveURL(url)) {
+                googleDriveOptions.classList.remove('hidden');
+                urlStatus.classList.remove('hidden');
+                urlStatusText.innerHTML = '<i class="fas fa-info-circle text-blue-500 mr-1"></i>ตรวจพบลิงค์ Google Drive - คลิก "แปลงลิงค์" เพื่อแปลงเป็นรูปแบบที่แสดงได้';
+                urlStatusText.className = 'text-blue-600';
+            } else {
+                googleDriveOptions.classList.add('hidden');
+                // Test if regular image URL works
+                testImageURL(url);
+            }
+        }
+
+        // Check if URL is Google Drive
+        function isGoogleDriveURL(url) {
+            return url.includes('drive.google.com') || url.includes('docs.google.com');
+        }
+
+        // Test if image URL is accessible
+        function testImageURL(url) {
+            const urlStatus = document.getElementById('urlStatus');
+            const urlStatusText = document.getElementById('urlStatusText');
+            
+            const img = new Image();
+            img.onload = function() {
+                urlStatus.classList.remove('hidden');
+                urlStatusText.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i>ลิงค์รูปภาพใช้งานได้';
+                urlStatusText.className = 'text-green-600';
+                
+                // Show preview
+                document.getElementById('previewImg').src = url;
+                document.getElementById('imagePreview').classList.remove('hidden');
+            };
+            img.onerror = function() {
+                urlStatus.classList.remove('hidden');
+                urlStatusText.innerHTML = '<i class="fas fa-exclamation-triangle text-red-500 mr-1"></i>ไม่สามารถโหลดรูปภาพได้ กรุณาตรวจสอบลิงค์';
+                urlStatusText.className = 'text-red-600';
+            };
+            img.src = url;
+        }
+
+        // Convert Google Drive URL to direct image link
+        function convertGoogleDriveURL() {
+            const urlInput = document.getElementById('promptImageURL');
+            const url = urlInput.value.trim();
+            const selectedFormat = document.querySelector('input[name="driveFormat"]:checked').value;
+
+            if (!url) {
+                showToast('กรุณาใส่ลิงค์ Google Drive ก่อน', 'error');
+                return;
+            }
+
+            const fileId = extractGoogleDriveFileId(url);
+            if (!fileId) {
+                showToast('ไม่สามารถดึง File ID จากลิงค์ได้', 'error');
+                return;
+            }
+
+            let convertedURL;
+            if (selectedFormat === 'lh3') {
+                convertedURL = `https://lh3.googleusercontent.com/d/${fileId}`;
+            } else {
+                convertedURL = `https://lh5.googleusercontent.com/d/${fileId}`;
+            }
+
+            urlInput.value = convertedURL;
+            
+            // Test the converted URL
+            testImageURL(convertedURL);
+            
+            showToast(`แปลงลิงค์เป็น ${selectedFormat} สำเร็จ!`);
+        }
+
+        // Extract Google Drive File ID from various URL formats
+        function extractGoogleDriveFileId(url) {
+            // Handle different Google Drive URL formats
+            let fileId = null;
+            
+            // Format: https://drive.google.com/file/d/FILE_ID/view
+            let match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (match) {
+                fileId = match[1];
+            }
+            
+            // Format: https://drive.google.com/open?id=FILE_ID
+            if (!fileId) {
+                match = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                if (match) {
+                    fileId = match[1];
+                }
+            }
+            
+            // Format: https://docs.google.com/document/d/FILE_ID/
+            if (!fileId) {
+                match = url.match(/\/document\/d\/([a-zA-Z0-9_-]+)/);
+                if (match) {
+                    fileId = match[1];
+                }
+            }
+
+            return fileId;
+        }
+
+        // Upload file to Google Drive
+        async function uploadFileToGoogleDrive(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const base64Data = e.target.result.split(',')[1]; // Remove data:image/jpeg;base64, prefix
+                        const fileName = `prompt_${Date.now()}_${file.name}`;
+                        
+                        const uploadData = {
+                            action: 'upload',
+                            fileName: fileName,
+                            fileData: base64Data,
+                            mimeType: file.type
+                        };
+
+                        const response = await fetch(API_ENDPOINT, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'text/plain',
+                            },
+                            body: JSON.stringify(uploadData),
+                            mode: 'cors'
+                        });
+
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            resolve(result.fileUrl);
+                        } else {
+                            reject(new Error(result.message || 'Upload failed'));
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Add new prompt
+        async function addPrompt(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังบันทึก...';
+            submitBtn.disabled = true;
+
+            try {
+                let imageURL = document.getElementById('promptImageURL').value.trim();
+                
+                // Upload file if selected
+                if (selectedFile) {
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังอัพโหลดรูปภาพ...';
+                    imageURL = await uploadFileToGoogleDrive(selectedFile);
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>กำลังบันทึกข้อมูล...';
+                }
+
+                const formData = {
+                    action: 'add',
+                    name: document.getElementById('promptName').value.trim(),
+                    description: document.getElementById('promptDescription').value.trim(),
+                    imageURL: imageURL,
+                    type: document.querySelector('input[name="promptType"]:checked').value,
+                    date: new Date().toLocaleDateString('th-TH'),
+                    timestamp: Date.now() // Add timestamp for proper sorting
+                };
+
+                console.log('Sending data:', formData);
+
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain',
+                    },
+                    body: JSON.stringify(formData),
+                    mode: 'cors'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Response:', result);
+                
+                if (result.success) {
+                    showToast('เพิ่ม Prompt สำเร็จ!');
+                    resetForm();
+                    toggleAddForm();
+                    await loadData(); // Reload data
+                } else {
+                    throw new Error(result.message || 'เกิดข้อผิดพลาดในการเพิ่มข้อมูล');
+                }
+            } catch (error) {
+                console.error('Error adding prompt:', error);
+                showToast('เกิดข้อผิดพลาดในการเพิ่มข้อมูล: ' + error.message, 'error');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Change page
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredPrompts.length / itemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                displayPrompts();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        // Change items per page
+        function changeItemsPerPage() {
+            itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
+            currentPage = 1;
+            displayPrompts();
+        }
+
+        // Search prompts
+        function searchPrompts() {
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+            
+            // Add debounce to avoid too many searches
+            searchTimeout = setTimeout(() => {
+                const searchInput = document.getElementById('searchInput');
+                const searchTerm = searchInput.value.trim().toLowerCase();
+                const clearBtn = document.getElementById('clearSearchBtn');
+                const searchResults = document.getElementById('searchResults');
+                const searchCount = document.getElementById('searchCount');
+                const searchTermSpan = document.getElementById('searchTerm');
+                
+                currentSearchTerm = searchTerm;
+                
+                if (searchTerm === '') {
+                    // No search term - apply type filter only
+                    applyFilters();
+                    clearBtn.classList.add('hidden');
+                    searchResults.classList.add('hidden');
+                } else {
+                    // Show clear button
+                    clearBtn.classList.remove('hidden');
+                    
+                    // Search in both name and description
+                    let searchResults_data = allPrompts.filter(prompt => {
+                        const nameMatch = prompt.name.toLowerCase().includes(searchTerm);
+                        const descriptionMatch = prompt.description.toLowerCase().includes(searchTerm);
+                        return nameMatch || descriptionMatch;
+                    });
+                    
+                    // Apply type filter to search results
+                    const selectedType = document.getElementById('typeFilter').value;
+                    if (selectedType !== '') {
+                        searchResults_data = searchResults_data.filter(prompt => prompt.type === selectedType);
+                    }
+                    
+                    filteredPrompts = searchResults_data;
+                    
+                    // Maintain sort order (highest ID first)
+                    filteredPrompts.sort((a, b) => {
+                        return b.id - a.id;
+                    });
+                    
+                    // Show search results info
+                    searchCount.textContent = filteredPrompts.length;
+                    searchTermSpan.textContent = searchInput.value.trim();
+                    searchResults.classList.remove('hidden');
+                    
+                    currentPage = 1;
+                    displayPrompts();
+                }
+            }, 300); // 300ms debounce
+        }
+
+        // Clear search
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            document.getElementById('searchResults').classList.add('hidden');
+            currentSearchTerm = '';
+            
+            // Apply filters without search
+            applyFilters();
+        }
+
+        // Apply filters (type filter and search)
+        function applyFilters() {
+            let results = [...allPrompts];
+            
+            // Apply search filter
+            if (currentSearchTerm !== '') {
+                results = results.filter(prompt => {
+                    const nameMatch = prompt.name.toLowerCase().includes(currentSearchTerm);
+                    const descriptionMatch = prompt.description.toLowerCase().includes(currentSearchTerm);
+                    return nameMatch || descriptionMatch;
+                });
+            }
+            
+            // Apply type filter
+            const selectedType = document.getElementById('typeFilter').value;
+            if (selectedType !== '') {
+                results = results.filter(prompt => prompt.type === selectedType);
+            }
+            
+            filteredPrompts = results;
+            
+            // Maintain sort order (highest ID first)
+            filteredPrompts.sort((a, b) => {
+                return b.id - a.id;
+            });
+            
+            currentPage = 1;
+            displayPrompts();
+        }
+
+        // Filter by type (updated to work with search)
+        function filterByType() {
+            applyFilters();
+            
+            // Update search results display if there's an active search
+            if (currentSearchTerm !== '') {
+                const searchCount = document.getElementById('searchCount');
+                searchCount.textContent = filteredPrompts.length;
+            }
+        }
+
+        // Refresh data
+        function refreshData() {
+            currentPage = 1;
+            document.getElementById('typeFilter').value = '';
+            
+            // Clear search
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearchBtn').classList.add('hidden');
+            document.getElementById('searchResults').classList.add('hidden');
+            currentSearchTerm = '';
+            
+            loadData();
+        }
+
+        // Show loading state
+        function showLoading() {
+            document.getElementById('loadingState').classList.remove('hidden');
+            document.getElementById('errorState').classList.add('hidden');
+            document.getElementById('cardsContainer').classList.add('hidden');
+            document.getElementById('paginationContainer').classList.add('hidden');
+        }
+
+        // Hide loading state
+        function hideLoading() {
+            document.getElementById('loadingState').classList.add('hidden');
+        }
+
+        // Show error state
+        function showError() {
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+            document.getElementById('cardsContainer').classList.add('hidden');
+            document.getElementById('paginationContainer').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Show image modal
+        function showImageModal(imageURL, title) {
+            document.getElementById('modalImage').src = imageURL;
+            document.getElementById('imageModalTitle').textContent = title;
+            document.getElementById('imageModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close image modal
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (!document.getElementById('modal').classList.contains('hidden')) {
+                    closeModal();
+                }
+                if (!document.getElementById('imageModal').classList.contains('hidden')) {
+                    closeImageModal();
+                }
+            }
+        });
+
+        // Close image modal when clicking outside
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'985f7fe0d713fd39',t:'MTc1OTAyMzI3OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
